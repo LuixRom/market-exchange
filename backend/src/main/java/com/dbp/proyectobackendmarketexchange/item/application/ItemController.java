@@ -7,28 +7,27 @@ import com.dbp.proyectobackendmarketexchange.item.domain.ItemService;
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemRequestDto;
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemResponseDto;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
+import com.dbp.proyectobackendmarketexchange.storage.domain.StorageService;
+import com.dbp.proyectobackendmarketexchange.storage.infrastructure.StorageServiceRegistry;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-
-import static com.dbp.proyectobackendmarketexchange.item.domain.ItemService.IMAGE_UPLOAD_DIR;
 
 @RestController
 @RequestMapping("/item")
 public class ItemController {
     private final ItemService itemService;
     private final ItemRepository itemRepository;
+    private final StorageServiceRegistry storageServiceRegistry;
 
-    public ItemController(ItemService itemService, ItemRepository itemRepository) {
+    public ItemController(ItemService itemService, ItemRepository itemRepository, StorageServiceRegistry storageServiceRegistry) {
         this.itemService = itemService;
         this.itemRepository = itemRepository;
+        this.storageServiceRegistry = storageServiceRegistry;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -42,32 +41,26 @@ public class ItemController {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
 
-        if (item.getImagePath() == null) {
+        if (item.getImageKey() == null) {
             return ResponseEntity.notFound().build();
         }
 
-        try {
-            // Construir la ruta del archivo
-            Path imagePath = Paths.get(IMAGE_UPLOAD_DIR, item.getImagePath());
-
-            // Verificar si el archivo existe
-            if (!Files.exists(imagePath)) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // Leer el contenido del archivo
-            byte[] fileContent = Files.readAllBytes(imagePath);
-
-            // Determinar el tipo MIME
-            String mimeType = Files.probeContentType(imagePath);
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(mimeType != null ? mimeType : "application/octet-stream"))
-                    .body(fileContent);
-
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        StorageService storageService = storageServiceRegistry.forProvider(item.getImageProvider());
+        if (!storageService.exists(item.getImageKey())) {
+            return ResponseEntity.notFound().build();
         }
+
+        byte[] fileContent = storageService.retrieve(item.getImageKey());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(mimeTypeFor(item.getImageKey())))
+                .body(fileContent);
+    }
+
+    @PutMapping(value = "/{itemId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ItemResponseDto> replaceItemImage(@PathVariable Long itemId, @RequestParam("image") MultipartFile image) {
+        ItemResponseDto responseDto = itemService.replaceItemImage(itemId, image);
+        return ResponseEntity.ok(responseDto);
     }
 
 
@@ -117,5 +110,19 @@ public class ItemController {
     public ResponseEntity<List<ItemResponseDto>> getUserItems() {
         List<ItemResponseDto> items = itemService.getUserItems();
         return ResponseEntity.ok(items);
+    }
+
+    // Las keys siempre las genera StorageService con una de estas extensiones (o son
+    // archivos legacy .jpg copiados manualmente) — no hace falta tocar el filesystem para
+    // saber el MIME type de servirlas.
+    private String mimeTypeFor(String storageKey) {
+        String lower = storageKey.toLowerCase();
+        if (lower.endsWith(".png")) {
+            return "image/png";
+        }
+        if (lower.endsWith(".webp")) {
+            return "image/webp";
+        }
+        return "image/jpeg";
     }
 }

@@ -1,17 +1,20 @@
 package com.dbp.proyectobackendmarketexchange.shipment.domain;
 
+import com.dbp.proyectobackendmarketexchange.auth.utils.AuthorizationUtils;
+import com.dbp.proyectobackendmarketexchange.exception.ForbiddenOperationException;
+import com.dbp.proyectobackendmarketexchange.exception.InvalidShipmentTransitionException;
 import com.dbp.proyectobackendmarketexchange.exception.ResourceNotFoundException;
 import com.dbp.proyectobackendmarketexchange.item.domain.Item;
 import com.dbp.proyectobackendmarketexchange.item.domain.ItemStatus;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
-import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentRequestDto;
+import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentAddressUpdateDto;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentResponseDto;
 import com.dbp.proyectobackendmarketexchange.shipment.infrastructure.ShipmentRepository;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeStatus;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.infrastructure.TradeProposalRepository;
 
-import org.modelmapper.ModelMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,18 +28,19 @@ public class ShipmentService {
     private final ShipmentRepository shipmentRepository;
     private final TradeProposalRepository tradeProposalRepository;
     private final ItemRepository itemRepository;
-    private final ModelMapper modelMapper;
+    private final AuthorizationUtils authorizationUtils;
 
-    public ShipmentService(ShipmentRepository shipmentRepository, TradeProposalRepository tradeProposalRepository, ItemRepository itemRepository, ModelMapper modelMapper) {
+    public ShipmentService(ShipmentRepository shipmentRepository, TradeProposalRepository tradeProposalRepository,
+                            ItemRepository itemRepository, AuthorizationUtils authorizationUtils) {
         this.shipmentRepository = shipmentRepository;
         this.tradeProposalRepository = tradeProposalRepository;
         this.itemRepository = itemRepository;
-        this.modelMapper = modelMapper;
+        this.authorizationUtils = authorizationUtils;
     }
 
     public List<ShipmentResponseDto> getAllShipments() {
         return shipmentRepository.findAll().stream()
-                .map(shipment -> modelMapper.map(shipment, ShipmentResponseDto.class))
+                .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
@@ -52,41 +56,104 @@ public class ShipmentService {
         Shipment shipment = new Shipment();
         shipment.setInitiatorAddress(tradeProposal.getProposer().getAddress());
         shipment.setReceiveAddress(tradeProposal.getReceiver().getAddress());
-
-        // Asignar una fecha de entrega predeterminada (7 días después)
         shipment.setDeliveryDate(LocalDateTime.now().plusDays(7));
-
         shipment.setTradeProposal(tradeProposal);
         shipment.setStatus(ShipmentStatus.PENDING);
         shipmentRepository.save(shipment);
     }
 
     public ShipmentResponseDto getShipmentById(Long id) {
-        Shipment shipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found"));
-        return modelMapper.map(shipment, ShipmentResponseDto.class);
+        Shipment shipment = loadShipment(id);
+        authorizeParticipantOrAdmin(shipment);
+        return mapToDto(shipment);
+    }
+
+    public ShipmentResponseDto updateAddresses(Long id, ShipmentAddressUpdateDto dto) {
+        Shipment shipment = loadShipment(id);
+
+        if (shipment.getStatus() != ShipmentStatus.PENDING && shipment.getStatus() != ShipmentStatus.PREPARING) {
+            throw new IllegalStateException("No se pueden editar direcciones de un envío " + shipment.getStatus());
+        }
+
+        if (dto.getInitiatorAddress() != null) {
+            authorizeProposerOrAdmin(shipment);
+            shipment.setInitiatorAddress(dto.getInitiatorAddress());
+        }
+        if (dto.getReceiveAddress() != null) {
+            authorizeReceiverOrAdmin(shipment);
+            shipment.setReceiveAddress(dto.getReceiveAddress());
+        }
+
+        return mapToDto(shipmentRepository.save(shipment));
+    }
+
+    public ShipmentResponseDto prepareShipment(Long id) {
+        Shipment shipment = loadShipment(id);
+        authorizeProposerOrAdmin(shipment);
+
+        if (shipment.getStatus() != ShipmentStatus.PENDING) {
+            throw new InvalidShipmentTransitionException("Solo un envío PENDING puede pasar a PREPARING");
+        }
+
+        shipment.setStatus(ShipmentStatus.PREPARING);
+        shipment.setPreparedAt(LocalDateTime.now());
+        return mapToDto(shipmentRepository.save(shipment));
+    }
+
+    public ShipmentResponseDto shipShipment(Long id, String trackingCode) {
+        Shipment shipment = loadShipment(id);
+        authorizeProposerOrAdmin(shipment);
+
+        if (shipment.getStatus() != ShipmentStatus.PREPARING) {
+            throw new InvalidShipmentTransitionException("Solo un envío PREPARING puede pasar a IN_TRANSIT");
+        }
+
+        shipment.setStatus(ShipmentStatus.IN_TRANSIT);
+        shipment.setShippedAt(LocalDateTime.now());
+        if (trackingCode != null && !trackingCode.isBlank()) {
+            shipment.setTrackingCode(trackingCode);
+        }
+
+        try {
+            return mapToDto(shipmentRepository.save(shipment));
+        } catch (DataIntegrityViolationException e) {
+            throw new InvalidShipmentTransitionException("El código de seguimiento ya está en uso por otro envío");
+        }
     }
 
     @Transactional
-    public ShipmentResponseDto updateShipment(Long id, ShipmentRequestDto shipmentRequestDto) {
-        Shipment existingShipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found"));
+    public ShipmentResponseDto deliverShipment(Long id) {
+        Shipment shipment = loadShipment(id);
+        authorizeReceiverOrAdmin(shipment);
 
-        if (existingShipment.getStatus() == ShipmentStatus.DELIVERED || existingShipment.getStatus() == ShipmentStatus.CANCELLED) {
-            throw new IllegalStateException("No se puede modificar un envío que ya está " + existingShipment.getStatus());
+        if (shipment.getStatus() != ShipmentStatus.IN_TRANSIT) {
+            throw new InvalidShipmentTransitionException("Solo un envío IN_TRANSIT puede marcarse DELIVERED");
         }
 
-        boolean justDelivered = shipmentRequestDto.getStatus() == ShipmentStatus.DELIVERED
-                && existingShipment.getStatus() != ShipmentStatus.DELIVERED;
+        shipment.setStatus(ShipmentStatus.DELIVERED);
+        shipment.setDeliveredAt(LocalDateTime.now());
+        Shipment saved = shipmentRepository.save(shipment);
 
-        mapRequestDtoToShipment(shipmentRequestDto, existingShipment);
-        Shipment updatedShipment = shipmentRepository.save(existingShipment);
+        completeTradeProposal(saved.getTradeProposal());
 
-        if (justDelivered) {
-            completeTradeProposal(updatedShipment.getTradeProposal());
+        return mapToDto(saved);
+    }
+
+    public ShipmentResponseDto cancelShipment(Long id) {
+        Shipment shipment = loadShipment(id);
+        authorizeParticipantOrAdmin(shipment);
+
+        if (shipment.getStatus() != ShipmentStatus.PENDING && shipment.getStatus() != ShipmentStatus.PREPARING) {
+            throw new InvalidShipmentTransitionException("Solo un envío PENDING o PREPARING puede cancelarse");
         }
 
-        return modelMapper.map(updatedShipment, ShipmentResponseDto.class);
+        shipment.setStatus(ShipmentStatus.CANCELLED);
+        shipment.setCancelledAt(LocalDateTime.now());
+        return mapToDto(shipmentRepository.save(shipment));
+    }
+
+    public void deleteShipment(Long id) {
+        shipmentRepository.deleteById(id);
     }
 
     private void completeTradeProposal(TradeProposal tradeProposal) {
@@ -105,20 +172,50 @@ public class ShipmentService {
         itemRepository.save(requestedItem);
     }
 
-    public void deleteShipment(Long id) {
-        shipmentRepository.deleteById(id);
+    private Shipment loadShipment(Long id) {
+        return shipmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found"));
     }
 
-    private void mapRequestDtoToShipment(ShipmentRequestDto dto, Shipment shipment) {
-        shipment.setInitiatorAddress(dto.getInitiatorAddress());
-        shipment.setReceiveAddress(dto.getReceiveAddress());
-        shipment.setDeliveryDate(dto.getDeliveryDate());
-        if (dto.getStatus() != null) {
-            shipment.setStatus(dto.getStatus());
+    private void authorizeProposerOrAdmin(Shipment shipment) {
+        Long proposerId = shipment.getTradeProposal().getProposer().getId();
+        if (!authorizationUtils.isAdminOrResourceOwner(proposerId)) {
+            throw new ForbiddenOperationException("Solo el proponente o un administrador pueden realizar esta acción");
         }
+    }
 
-        TradeProposal tradeProposal = tradeProposalRepository.findById(dto.getTradeProposalId())
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
-        shipment.setTradeProposal(tradeProposal);
+    private void authorizeReceiverOrAdmin(Shipment shipment) {
+        Long receiverId = shipment.getTradeProposal().getReceiver().getId();
+        if (!authorizationUtils.isAdminOrResourceOwner(receiverId)) {
+            throw new ForbiddenOperationException("Solo el receptor o un administrador pueden realizar esta acción");
+        }
+    }
+
+    private void authorizeParticipantOrAdmin(Shipment shipment) {
+        Long proposerId = shipment.getTradeProposal().getProposer().getId();
+        Long receiverId = shipment.getTradeProposal().getReceiver().getId();
+        if (!authorizationUtils.isAdminOrResourceOwner(proposerId, receiverId)) {
+            throw new ForbiddenOperationException("No tienes permiso sobre este envío");
+        }
+    }
+
+    private ShipmentResponseDto mapToDto(Shipment shipment) {
+        ShipmentResponseDto dto = new ShipmentResponseDto();
+        dto.setId(shipment.getId());
+        dto.setInitiatorAddress(shipment.getInitiatorAddress());
+        dto.setReceiveAddress(shipment.getReceiveAddress());
+        dto.setDeliveryDate(shipment.getDeliveryDate());
+        dto.setStatus(shipment.getStatus());
+        dto.setTrackingCode(shipment.getTrackingCode());
+        dto.setCreatedAt(shipment.getCreatedAt());
+        dto.setUpdatedAt(shipment.getUpdatedAt());
+        dto.setPreparedAt(shipment.getPreparedAt());
+        dto.setShippedAt(shipment.getShippedAt());
+        dto.setDeliveredAt(shipment.getDeliveredAt());
+        dto.setCancelledAt(shipment.getCancelledAt());
+        if (shipment.getTradeProposal() != null) {
+            dto.setTradeProposalId(shipment.getTradeProposal().getId());
+        }
+        return dto;
     }
 }

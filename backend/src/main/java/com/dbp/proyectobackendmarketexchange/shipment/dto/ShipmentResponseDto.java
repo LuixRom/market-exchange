@@ -16,4 +16,11 @@ public class ShipmentResponseDto {
     private LocalDateTime deliveryDate;
     private Long tradeProposalId;
     private ShipmentStatus status;
+    private String trackingCode;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime preparedAt;
+    private LocalDateTime shippedAt;
+    private LocalDateTime deliveredAt;
+    private LocalDateTime cancelledAt;
 }

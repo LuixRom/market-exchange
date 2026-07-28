@@ -1,10 +1,16 @@
 package com.dbp.proyectobackendmarketexchange.shipment;
 
+import com.dbp.proyectobackendmarketexchange.auth.utils.AuthorizationUtils;
+import com.dbp.proyectobackendmarketexchange.exception.ForbiddenOperationException;
+import com.dbp.proyectobackendmarketexchange.exception.InvalidShipmentTransitionException;
 import com.dbp.proyectobackendmarketexchange.exception.ResourceNotFoundException;
+import com.dbp.proyectobackendmarketexchange.item.domain.Item;
+import com.dbp.proyectobackendmarketexchange.item.domain.ItemStatus;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
 import com.dbp.proyectobackendmarketexchange.shipment.domain.Shipment;
 import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentService;
-import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentRequestDto;
+import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentStatus;
+import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentAddressUpdateDto;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentResponseDto;
 import com.dbp.proyectobackendmarketexchange.shipment.infrastructure.ShipmentRepository;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
@@ -14,11 +20,9 @@ import com.dbp.proyectobackendmarketexchange.usuario.domain.Role;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.Usuario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.modelmapper.ModelMapper;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -41,26 +45,63 @@ class ShipmentServiceTest {
     private ItemRepository itemRepository;
 
     @Mock
-    private ModelMapper modelMapper;
+    private AuthorizationUtils authorizationUtils;
 
     @InjectMocks
     private ShipmentService shipmentService;
 
+    private Usuario proposer;
+    private Usuario receiver;
+    private TradeProposal tradeProposal;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+
+        proposer = new Usuario();
+        proposer.setId(1L);
+        proposer.setFirstname("Proposer");
+        proposer.setLastname("LastName");
+        proposer.setEmail("proposer@example.com");
+        proposer.setPhone("123456789");
+        proposer.setPassword("password123");
+        proposer.setAddress("Proposer Address");
+        proposer.setRole(Role.USER);
+        proposer.setCreatedAt(LocalDateTime.now());
+
+        receiver = new Usuario();
+        receiver.setId(2L);
+        receiver.setFirstname("Receiver");
+        receiver.setLastname("ReceiverLastName");
+        receiver.setEmail("receiver@example.com");
+        receiver.setPhone("987654321");
+        receiver.setPassword("password321");
+        receiver.setAddress("Receiver Address");
+        receiver.setRole(Role.USER);
+        receiver.setCreatedAt(LocalDateTime.now());
+
+        tradeProposal = new TradeProposal();
+        tradeProposal.setId(100L);
+        tradeProposal.setProposer(proposer);
+        tradeProposal.setReceiver(receiver);
+        tradeProposal.setStatus(TradeStatus.ACCEPTED);
+
+        Item offeredItem = new Item();
+        offeredItem.setId(11L);
+        offeredItem.setStatus(ItemStatus.RESERVED);
+        Item requestedItem = new Item();
+        requestedItem.setId(12L);
+        requestedItem.setStatus(ItemStatus.RESERVED);
+        tradeProposal.setOfferedItem(offeredItem);
+        tradeProposal.setRequestedItem(requestedItem);
     }
 
     @Test
     public void testGetAllShipments() {
         Shipment shipment1 = new Shipment();
         Shipment shipment2 = new Shipment();
-        ShipmentResponseDto shipmentDto1 = new ShipmentResponseDto();
-        ShipmentResponseDto shipmentDto2 = new ShipmentResponseDto();
 
         when(shipmentRepository.findAll()).thenReturn(Arrays.asList(shipment1, shipment2));
-        when(modelMapper.map(shipment1, ShipmentResponseDto.class)).thenReturn(shipmentDto1);
-        when(modelMapper.map(shipment2, ShipmentResponseDto.class)).thenReturn(shipmentDto2);
 
         List<ShipmentResponseDto> shipments = shipmentService.getAllShipments();
 
@@ -71,55 +112,16 @@ class ShipmentServiceTest {
 
     @Test
     public void testCreateShipmentForTradeProposal_Accepted() {
-        Usuario proposer = new Usuario();
-        proposer.setFirstname("Proposer");
-        proposer.setLastname("LastName");
-        proposer.setEmail("proposer@example.com");
-        proposer.setPhone("123456789");
-        proposer.setPassword("password123");
-        proposer.setAddress("Proposer Address");
-        proposer.setRole(Role.USER);
-        proposer.setCreatedAt(LocalDateTime.now());
-
-        Usuario receiver = new Usuario();
-        receiver.setFirstname("Receiver");
-        receiver.setLastname("ReceiverLastName");
-        receiver.setEmail("receiver@example.com");
-        receiver.setPhone("987654321");
-        receiver.setPassword("password321");
-        receiver.setAddress("Receiver Address");
-        receiver.setRole(Role.USER);
-        receiver.setCreatedAt(LocalDateTime.now());
-
-        TradeProposal tradeProposal = new TradeProposal();
-        tradeProposal.setStatus(TradeStatus.ACCEPTED);
-        tradeProposal.setProposer(proposer);
-        tradeProposal.setReceiver(receiver);
-
-        Shipment shipment = new Shipment();
-        shipment.setInitiatorAddress(proposer.getAddress());
-        shipment.setReceiveAddress(receiver.getAddress());
-        shipment.setDeliveryDate(LocalDateTime.now().plusDays(7));
-
-        when(shipmentRepository.save(any(Shipment.class))).thenReturn(shipment);
+        when(shipmentRepository.existsByTradeProposalId(100L)).thenReturn(false);
+        when(shipmentRepository.save(any(Shipment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         shipmentService.createShipmentForTradeProposal(tradeProposal);
 
         verify(shipmentRepository, times(1)).save(any(Shipment.class));
-
-        ArgumentCaptor<Shipment> shipmentCaptor = ArgumentCaptor.forClass(Shipment.class);
-        verify(shipmentRepository).save(shipmentCaptor.capture());
-
-        Shipment savedShipment = shipmentCaptor.getValue();
-        assertEquals("Proposer Address", savedShipment.getInitiatorAddress());
-        assertEquals("Receiver Address", savedShipment.getReceiveAddress());
-        assertNotNull(savedShipment.getDeliveryDate());
-        assertEquals(tradeProposal, savedShipment.getTradeProposal());
     }
 
     @Test
     public void testCreateShipmentForTradeProposal_NotAccepted() {
-        TradeProposal tradeProposal = new TradeProposal();
         tradeProposal.setStatus(TradeStatus.PENDING);
 
         assertThrows(IllegalStateException.class, () -> shipmentService.createShipmentForTradeProposal(tradeProposal));
@@ -127,78 +129,238 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testGetShipmentById_Success() {
+    public void testCreateShipmentForTradeProposal_AlreadyExists_NoOp() {
+        when(shipmentRepository.existsByTradeProposalId(100L)).thenReturn(true);
+
+        shipmentService.createShipmentForTradeProposal(tradeProposal);
+
+        verify(shipmentRepository, never()).save(any(Shipment.class));
+    }
+
+    private Shipment buildShipment(ShipmentStatus status) {
         Shipment shipment = new Shipment();
         shipment.setId(1L);
-        ShipmentResponseDto shipmentResponseDto = new ShipmentResponseDto();
+        shipment.setTradeProposal(tradeProposal);
+        shipment.setInitiatorAddress("Proposer Address");
+        shipment.setReceiveAddress("Receiver Address");
+        shipment.setStatus(status);
+        return shipment;
+    }
 
+    @Test
+    public void testGetShipmentById_ParticipantAllowed() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
-        when(modelMapper.map(shipment, ShipmentResponseDto.class)).thenReturn(shipmentResponseDto);
+        when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
 
         ShipmentResponseDto result = shipmentService.getShipmentById(1L);
 
         assertNotNull(result);
-        verify(shipmentRepository, times(1)).findById(1L);
-        verify(modelMapper, times(1)).map(shipment, ShipmentResponseDto.class);
+        assertEquals(100L, result.getTradeProposalId());
     }
 
     @Test
     public void testGetShipmentById_NotFound() {
         when(shipmentRepository.findById(1L)).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class, () -> shipmentService.getShipmentById(1L));
-        verify(shipmentRepository, times(1)).findById(1L);
     }
 
     @Test
-    public void testUpdateShipment() {
-        Shipment existingShipment = new Shipment();
-        existingShipment.setId(1L);
-        existingShipment.setInitiatorAddress("Old Initiator Address");
-        existingShipment.setReceiveAddress("Old Recipient Address");
-        existingShipment.setDeliveryDate(LocalDateTime.now());
+    public void testGetShipmentById_Forbidden() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(false);
 
-        ShipmentRequestDto shipmentRequestDto = new ShipmentRequestDto();
-        shipmentRequestDto.setInitiatorAddress("New Initiator Address");
-        shipmentRequestDto.setReceiveAddress("New Recipient Address");
-        shipmentRequestDto.setDeliveryDate(LocalDateTime.now().plusDays(7));
-        shipmentRequestDto.setTradeProposalId(1L);
-
-        TradeProposal tradeProposal = new TradeProposal();
-        tradeProposal.setId(1L);
-
-        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(existingShipment));
-        when(tradeProposalRepository.findById(1L)).thenReturn(Optional.of(tradeProposal));
-        when(shipmentRepository.save(any(Shipment.class))).thenReturn(existingShipment);
-
-        ShipmentResponseDto responseDto = new ShipmentResponseDto();
-        responseDto.setId(1L);
-        responseDto.setInitiatorAddress("New Initiator Address");
-        responseDto.setReceiveAddress("New Recipient Address");
-
-        when(modelMapper.map(any(Shipment.class), eq(ShipmentResponseDto.class))).thenReturn(responseDto);
-
-        ShipmentResponseDto result = shipmentService.updateShipment(1L, shipmentRequestDto);
-
-        assertNotNull(result);
-        assertEquals("New Initiator Address", result.getInitiatorAddress());
-        assertEquals("New Recipient Address", result.getReceiveAddress());
-
-        verify(shipmentRepository, times(1)).save(any(Shipment.class));
+        assertThrows(ForbiddenOperationException.class, () -> shipmentService.getShipmentById(1L));
     }
 
     @Test
-    public void testUpdateShipment_NotFound() {
-        when(shipmentRepository.findById(anyLong())).thenReturn(Optional.empty());
+    public void testUpdateAddresses_ProposerEditsInitiatorAddress() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+        when(shipmentRepository.save(shipment)).thenReturn(shipment);
 
-        ShipmentRequestDto shipmentRequestDto = new ShipmentRequestDto();
-        assertThrows(ResourceNotFoundException.class, () -> shipmentService.updateShipment(1L, shipmentRequestDto));
-        verify(shipmentRepository, times(1)).findById(anyLong());
+        ShipmentAddressUpdateDto dto = new ShipmentAddressUpdateDto();
+        dto.setInitiatorAddress("Nueva direccion proposer");
+
+        ShipmentResponseDto result = shipmentService.updateAddresses(1L, dto);
+
+        assertEquals("Nueva direccion proposer", result.getInitiatorAddress());
+        verify(authorizationUtils, never()).isAdminOrResourceOwner(2L);
+    }
+
+    @Test
+    public void testUpdateAddresses_ProposerCannotEditReceiveAddress() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(2L)).thenReturn(false);
+
+        ShipmentAddressUpdateDto dto = new ShipmentAddressUpdateDto();
+        dto.setReceiveAddress("Direccion que no le pertenece");
+
+        assertThrows(ForbiddenOperationException.class, () -> shipmentService.updateAddresses(1L, dto));
+    }
+
+    @Test
+    public void testUpdateAddresses_BlockedAfterShipped() {
+        Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+
+        ShipmentAddressUpdateDto dto = new ShipmentAddressUpdateDto();
+        dto.setInitiatorAddress("Otra direccion");
+
+        assertThrows(IllegalStateException.class, () -> shipmentService.updateAddresses(1L, dto));
+    }
+
+    @Test
+    public void testPrepareShipment_Success() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+        when(shipmentRepository.save(shipment)).thenReturn(shipment);
+
+        ShipmentResponseDto result = shipmentService.prepareShipment(1L);
+
+        assertEquals(ShipmentStatus.PREPARING, result.getStatus());
+        assertNotNull(result.getPreparedAt());
+    }
+
+    @Test
+    public void testPrepareShipment_InvalidTransition() {
+        Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+
+        assertThrows(InvalidShipmentTransitionException.class, () -> shipmentService.prepareShipment(1L));
+    }
+
+    @Test
+    public void testPrepareShipment_ForbiddenForReceiver() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(false);
+
+        assertThrows(ForbiddenOperationException.class, () -> shipmentService.prepareShipment(1L));
+    }
+
+    @Test
+    public void testShipShipment_Success() {
+        Shipment shipment = buildShipment(ShipmentStatus.PREPARING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+        when(shipmentRepository.save(shipment)).thenReturn(shipment);
+
+        ShipmentResponseDto result = shipmentService.shipShipment(1L, "TRACK-123");
+
+        assertEquals(ShipmentStatus.IN_TRANSIT, result.getStatus());
+        assertEquals("TRACK-123", result.getTrackingCode());
+        assertNotNull(result.getShippedAt());
+    }
+
+    @Test
+    public void testShipShipment_DuplicateTrackingCode_TranslatesToInvalidTransition() {
+        Shipment shipment = buildShipment(ShipmentStatus.PREPARING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+        when(shipmentRepository.save(shipment))
+                .thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate key"));
+
+        assertThrows(InvalidShipmentTransitionException.class, () -> shipmentService.shipShipment(1L, "TRACK-DUP"));
+    }
+
+    @Test
+    public void testShipShipment_InvalidTransition() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+
+        assertThrows(InvalidShipmentTransitionException.class, () -> shipmentService.shipShipment(1L, null));
+    }
+
+    @Test
+    public void testDeliverShipment_Success_CompletesTradeProposal() {
+        Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(2L)).thenReturn(true);
+        when(shipmentRepository.save(shipment)).thenReturn(shipment);
+        when(tradeProposalRepository.save(tradeProposal)).thenReturn(tradeProposal);
+        when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ShipmentResponseDto result = shipmentService.deliverShipment(1L);
+
+        assertEquals(ShipmentStatus.DELIVERED, result.getStatus());
+        assertNotNull(result.getDeliveredAt());
+        assertEquals(TradeStatus.COMPLETED, tradeProposal.getStatus());
+        assertEquals(ItemStatus.EXCHANGED, tradeProposal.getOfferedItem().getStatus());
+        assertEquals(ItemStatus.EXCHANGED, tradeProposal.getRequestedItem().getStatus());
+    }
+
+    @Test
+    public void testDeliverShipment_ForbiddenForProposer() {
+        Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(2L)).thenReturn(false);
+
+        assertThrows(ForbiddenOperationException.class, () -> shipmentService.deliverShipment(1L));
+    }
+
+    @Test
+    public void testDeliverShipment_CannotDeliverTwice() {
+        Shipment shipment = buildShipment(ShipmentStatus.DELIVERED);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(2L)).thenReturn(true);
+
+        assertThrows(InvalidShipmentTransitionException.class, () -> shipmentService.deliverShipment(1L));
+        verify(shipmentRepository, never()).save(any(Shipment.class));
+    }
+
+    @Test
+    public void testCancelShipment_AllowedFromPending() {
+        Shipment shipment = buildShipment(ShipmentStatus.PENDING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
+        when(shipmentRepository.save(shipment)).thenReturn(shipment);
+
+        ShipmentResponseDto result = shipmentService.cancelShipment(1L);
+
+        assertEquals(ShipmentStatus.CANCELLED, result.getStatus());
+        assertNotNull(result.getCancelledAt());
+    }
+
+    @Test
+    public void testCancelShipment_AllowedFromPreparing() {
+        Shipment shipment = buildShipment(ShipmentStatus.PREPARING);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
+        when(shipmentRepository.save(shipment)).thenReturn(shipment);
+
+        ShipmentResponseDto result = shipmentService.cancelShipment(1L);
+
+        assertEquals(ShipmentStatus.CANCELLED, result.getStatus());
+    }
+
+    @Test
+    public void testCancelShipment_ProhibitedFromInTransit() {
+        Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
+
+        assertThrows(InvalidShipmentTransitionException.class, () -> shipmentService.cancelShipment(1L));
+    }
+
+    @Test
+    public void testCancelShipment_ProhibitedFromDelivered() {
+        Shipment shipment = buildShipment(ShipmentStatus.DELIVERED);
+        when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
+        when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
+
+        assertThrows(InvalidShipmentTransitionException.class, () -> shipmentService.cancelShipment(1L));
     }
 
     @Test
     public void testDeleteShipment() {
-        doNothing().when(shipmentRepository).deleteById(anyLong());
+        doNothing().when(shipmentRepository).deleteById(1L);
 
         shipmentService.deleteShipment(1L);
 

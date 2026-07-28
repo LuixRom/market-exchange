@@ -6,6 +6,9 @@ import com.dbp.proyectobackendmarketexchange.item.domain.ItemService;
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemRequestDto;
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemResponseDto;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
+import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
+import com.dbp.proyectobackendmarketexchange.storage.domain.StorageService;
+import com.dbp.proyectobackendmarketexchange.storage.infrastructure.StorageServiceRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -14,10 +17,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -40,6 +45,9 @@ public class ItemControllerTest {
 
     @MockBean
     private ItemRepository itemRepository;
+
+    @MockBean
+    private StorageServiceRegistry storageServiceRegistry;
 
 
     @Test
@@ -223,5 +231,55 @@ public class ItemControllerTest {
 
         // Verificar que el servicio fue llamado
         verify(itemService, times(1)).getUserItems();
+    }
+
+    @Test
+    public void testGetImage_NotFound_WhenNoImageKey() throws Exception {
+        com.dbp.proyectobackendmarketexchange.item.domain.Item item = new com.dbp.proyectobackendmarketexchange.item.domain.Item();
+        item.setId(1L);
+
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+
+        mockMvc.perform(get("/item/1/image"))
+                .andExpect(status().isNotFound());
+
+        verify(storageServiceRegistry, never()).forProvider(any());
+    }
+
+    @Test
+    public void testGetImage_Success() throws Exception {
+        com.dbp.proyectobackendmarketexchange.item.domain.Item item = new com.dbp.proyectobackendmarketexchange.item.domain.Item();
+        item.setId(1L);
+        item.setImageKey("items/abc.jpg");
+        item.setImageProvider(StorageProvider.LOCAL);
+
+        StorageService storageService = mock(StorageService.class);
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(storageServiceRegistry.forProvider(StorageProvider.LOCAL)).thenReturn(storageService);
+        when(storageService.exists("items/abc.jpg")).thenReturn(true);
+        when(storageService.retrieve("items/abc.jpg")).thenReturn(new byte[]{1, 2, 3});
+
+        mockMvc.perform(get("/item/1/image"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_JPEG));
+    }
+
+    @Test
+    public void testReplaceItemImage() throws Exception {
+        ItemResponseDto responseDto = new ItemResponseDto();
+        responseDto.setId(1L);
+
+        when(itemService.replaceItemImage(eq(1L), any())).thenReturn(responseDto);
+
+        MockMultipartFile file = new MockMultipartFile("image", "foto.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/item/1/image").file(file).with(req -> {
+                    req.setMethod("PUT");
+                    return req;
+                }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
+
+        verify(itemService, times(1)).replaceItemImage(eq(1L), any());
     }
 }

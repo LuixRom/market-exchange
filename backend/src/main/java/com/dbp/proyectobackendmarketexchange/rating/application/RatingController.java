@@ -2,6 +2,7 @@ package com.dbp.proyectobackendmarketexchange.rating.application;
 
 
 import com.dbp.proyectobackendmarketexchange.rating.domain.RatingService;
+import com.dbp.proyectobackendmarketexchange.rating.dto.RatingReputationDto;
 import com.dbp.proyectobackendmarketexchange.rating.dto.RatingRequestDto;
 import com.dbp.proyectobackendmarketexchange.rating.dto.RatingResponseDto;
 import jakarta.validation.Valid;
@@ -42,9 +43,14 @@ public class RatingController {
         return new ResponseEntity<>(ratings, HttpStatus.OK);
     }
 
+    @GetMapping("/usuario/{usuarioId}/reputation")
+    public ResponseEntity<RatingReputationDto> getReputation(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(ratingService.getReputation(usuarioId));
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<RatingResponseDto> deleteRating(@PathVariable("id") Long ratingId) {
-        ratingService.deleteItem(ratingId);
+    public ResponseEntity<Void> deleteRating(@PathVariable("id") Long ratingId) {
+        ratingService.deleteRating(ratingId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -60,6 +61,36 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({TradeProposalConflictException.class, PessimisticLockingFailureException.class})
     public ProblemDetail handleTradeProposalConflictException(RuntimeException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "No se pudo procesar la propuesta, intenta nuevamente");
+    }
+
+    @ExceptionHandler(InvalidStorageFileException.class)
+    public ProblemDetail handleInvalidStorageFileException(InvalidStorageFileException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE, "El archivo supera el tamaño máximo permitido");
+    }
+
+    @ExceptionHandler(StorageException.class)
+    public ProblemDetail handleStorageException(StorageException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo completar la operación de almacenamiento");
+    }
+
+    @ExceptionHandler(InvalidShipmentTransitionException.class)
+    public ProblemDetail handleInvalidShipmentTransitionException(InvalidShipmentTransitionException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(RatingNotAllowedException.class)
+    public ProblemDetail handleRatingNotAllowedException(RatingNotAllowedException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateRatingException.class)
+    public ProblemDetail handleDuplicateRatingException(DuplicateRatingException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
