@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Intercambio Rechazado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #FF6347;
+        }
+        p {
+            color: #333333;
+            line-height: 1.6;
+        }
+        .highlight {
+            color: #FF6347;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>¡Intercambio Rechazado!</h1>
+    <p>Hola,</p>
+    <p>Has rechazado la solicitud de <span class="highlight" th:text="${initiatorEmail}">Email del iniciador</span> para intercambiar productos.</p>
+    <p><strong>Tu producto:</strong> <span th:text="${itemFinName}">Nombre del producto</span></p>
+    <p><strong>Producto de <span th:text="${initiatorEmail}">Email del iniciador</span>:</strong> <span th:text="${itemIniName}">Nombre del producto</span></p>
+    <p>Gracias por tomarte el tiempo para revisar la solicitud.</p>
+</div>
+</body>
+</html>

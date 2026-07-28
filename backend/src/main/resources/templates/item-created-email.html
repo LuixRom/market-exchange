@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publicación Creada</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #1E90FF;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content h2 {
+            color: #333333;
+            font-size: 20px;
+        }
+        .content p {
+            color: #555555;
+            line-height: 1.5;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .content a {
+            background-color: #1E90FF;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 16px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 10px 20px;
+            text-align: center;
+            color: #888888;
+            font-size: 12px;
+        }
+        .footer a {
+            color: #1E90FF;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <!-- Header del correo -->
+    <div class="header">
+        <h1>¡Has creado una nueva publicación!</h1>
+    </div>
+
+    <!-- Contenido del correo -->
+    <div class="content">
+        <h2>Hola 👋,</h2>
+        <p>Has publicado un nuevo ítem para intercambio en MarketExchange:</p>
+        <p><strong>Ítem:</strong> <span th:text="${itemName}">Nombre del Ítem</span></p>
+        <p><strong>Categoría:</strong> <span th:text="${categoryName}">Nombre de la Categoría</span></p>
+        <p>¡Gracias por contribuir a nuestra plataforma y hacer de este mundo un lugar más sostenible! Puedes ver tu publicación aquí:</p>
+        <p>
+            <a href="https://marketexchange.com/mis-publicaciones" target="_blank">Ver mis publicaciones</a>
+        </p>
+        <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en <a href="mailto:soporte@marketexchange.com">contactarnos</a>.</p>
+    </div>
+
+    <!-- Footer del correo -->
+    <div class="footer">
+        <p>&copy; 2024 MarketExchange. Todos los derechos reservados.</p>
+        <p><a href="https://marketexchange.com">Visita nuestro sitio web</a> | <a href="mailto:soporte@marketexchange.com">Contáctanos</a></p>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitud de Intercambio Recibida</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        p {
+            color: #333333;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>¡Solicitud Recibida!</h1>
+    <p><span th:text="${initiatorEmail}">Email del iniciador</span> desea intercambiar su producto con tu producto:</p>
+    <p><strong>Tu producto:</strong> <span th:text="${itemFinName}">Nombre del producto</span></p>
+    <p><strong>Producto que te ofrecen:</strong> <span th:text="${itemIniName}">Nombre del producto</span></p>
+</div>
+</body>
+</html>
