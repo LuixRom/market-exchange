@@ -1,11 +1,11 @@
 package com.dbp.proyectobackendmarketexchange.shipment.application;
 
-import com.dbp.proyectobackendmarketexchange.agreement.domain.Agreement;
-import com.dbp.proyectobackendmarketexchange.agreement.infrastructure.AgreementRepository;
 import com.dbp.proyectobackendmarketexchange.exception.ResourceNotFoundException;
 import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentService;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentRequestDto;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentResponseDto;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.infrastructure.TradeProposalRepository;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,11 +18,11 @@ import java.util.List;
 public class ShipmentController {
 
     private final ShipmentService shipmentService;
-    private final AgreementRepository agreementRepository;
+    private final TradeProposalRepository tradeProposalRepository;
 
-    public ShipmentController(ShipmentService shipmentService, AgreementRepository agreementRepository) {
+    public ShipmentController(ShipmentService shipmentService, TradeProposalRepository tradeProposalRepository) {
         this.shipmentService = shipmentService;
-        this.agreementRepository = agreementRepository;
+        this.tradeProposalRepository = tradeProposalRepository;
     }
 
     // Obtener todos los envíos
@@ -33,11 +33,11 @@ public class ShipmentController {
 
     // Crear un nuevo envío
     @PostMapping
-    public ShipmentResponseDto createShipmentForAgreement(@Valid @RequestBody ShipmentRequestDto shipmentRequestDto) {
-        Agreement agreement = agreementRepository.findById(shipmentRequestDto.getAgreementId())
-                .orElseThrow(() -> new ResourceNotFoundException("Agreement not found"));
+    public ShipmentResponseDto createShipmentForTradeProposal(@Valid @RequestBody ShipmentRequestDto shipmentRequestDto) {
+        TradeProposal tradeProposal = tradeProposalRepository.findById(shipmentRequestDto.getTradeProposalId())
+                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
 
-        shipmentService.createShipmentForAgreement(agreement);
+        shipmentService.createShipmentForTradeProposal(tradeProposal);
 
         return new ShipmentResponseDto();
     }

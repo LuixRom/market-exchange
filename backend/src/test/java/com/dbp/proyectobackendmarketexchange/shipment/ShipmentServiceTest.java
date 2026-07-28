@@ -1,13 +1,15 @@
 package com.dbp.proyectobackendmarketexchange.shipment;
 
-import com.dbp.proyectobackendmarketexchange.agreement.domain.Agreement;
-import com.dbp.proyectobackendmarketexchange.agreement.domain.State;
-import com.dbp.proyectobackendmarketexchange.agreement.infrastructure.AgreementRepository;
+import com.dbp.proyectobackendmarketexchange.exception.ResourceNotFoundException;
+import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
 import com.dbp.proyectobackendmarketexchange.shipment.domain.Shipment;
 import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentService;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentRequestDto;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentResponseDto;
 import com.dbp.proyectobackendmarketexchange.shipment.infrastructure.ShipmentRepository;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeStatus;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.infrastructure.TradeProposalRepository;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.Role;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.Usuario;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +35,10 @@ class ShipmentServiceTest {
     private ShipmentRepository shipmentRepository;
 
     @Mock
-    private AgreementRepository agreementRepository;
+    private TradeProposalRepository tradeProposalRepository;
+
+    @Mock
+    private ItemRepository itemRepository;
 
     @Mock
     private ModelMapper modelMapper;
@@ -65,67 +70,59 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCreateShipmentForAgreement_Accepted() {
-        // Crear usuarios completos
-        Usuario initiator = new Usuario();
-        initiator.setFirstname("Initiator");
-        initiator.setLastname("InitiatorLastName");
-        initiator.setEmail("initiator@example.com");
-        initiator.setPhone("123456789");
-        initiator.setPassword("password123");
-        initiator.setAddress("Initiator Address");
-        initiator.setRole(Role.USER);
-        initiator.setCreatedAt(LocalDateTime.now());
+    public void testCreateShipmentForTradeProposal_Accepted() {
+        Usuario proposer = new Usuario();
+        proposer.setFirstname("Proposer");
+        proposer.setLastname("LastName");
+        proposer.setEmail("proposer@example.com");
+        proposer.setPhone("123456789");
+        proposer.setPassword("password123");
+        proposer.setAddress("Proposer Address");
+        proposer.setRole(Role.USER);
+        proposer.setCreatedAt(LocalDateTime.now());
 
-        Usuario recipient = new Usuario();
-        recipient.setFirstname("Recipient");
-        recipient.setLastname("RecipientLastName");
-        recipient.setEmail("recipient@example.com");
-        recipient.setPhone("987654321");
-        recipient.setPassword("password321");
-        recipient.setAddress("Recipient Address");
-        recipient.setRole(Role.USER);
-        recipient.setCreatedAt(LocalDateTime.now());
+        Usuario receiver = new Usuario();
+        receiver.setFirstname("Receiver");
+        receiver.setLastname("ReceiverLastName");
+        receiver.setEmail("receiver@example.com");
+        receiver.setPhone("987654321");
+        receiver.setPassword("password321");
+        receiver.setAddress("Receiver Address");
+        receiver.setRole(Role.USER);
+        receiver.setCreatedAt(LocalDateTime.now());
 
-        // Crear el acuerdo con el estado ACCEPTED
-        Agreement agreement = new Agreement();
-        agreement.setState(State.ACCEPTED);
-        agreement.setInitiator(initiator);
-        agreement.setRecipient(recipient);
+        TradeProposal tradeProposal = new TradeProposal();
+        tradeProposal.setStatus(TradeStatus.ACCEPTED);
+        tradeProposal.setProposer(proposer);
+        tradeProposal.setReceiver(receiver);
 
-        // Crear un envío
         Shipment shipment = new Shipment();
-        shipment.setInitiatorAddress(initiator.getAddress());
-        shipment.setReceiveAddress(recipient.getAddress());
+        shipment.setInitiatorAddress(proposer.getAddress());
+        shipment.setReceiveAddress(receiver.getAddress());
         shipment.setDeliveryDate(LocalDateTime.now().plusDays(7));
 
-        // Mockear la función save del repositorio
         when(shipmentRepository.save(any(Shipment.class))).thenReturn(shipment);
 
-        // Ejecutar el servicio para crear el envío
-        shipmentService.createShipmentForAgreement(agreement);
+        shipmentService.createShipmentForTradeProposal(tradeProposal);
 
-        // Verificar que se haya guardado el envío
         verify(shipmentRepository, times(1)).save(any(Shipment.class));
 
-        // Verificar el contenido del envío guardado
         ArgumentCaptor<Shipment> shipmentCaptor = ArgumentCaptor.forClass(Shipment.class);
         verify(shipmentRepository).save(shipmentCaptor.capture());
 
         Shipment savedShipment = shipmentCaptor.getValue();
-        assertEquals("Initiator Address", savedShipment.getInitiatorAddress());
-        assertEquals("Recipient Address", savedShipment.getReceiveAddress());
+        assertEquals("Proposer Address", savedShipment.getInitiatorAddress());
+        assertEquals("Receiver Address", savedShipment.getReceiveAddress());
         assertNotNull(savedShipment.getDeliveryDate());
-        assertEquals(agreement, savedShipment.getAgreement());
+        assertEquals(tradeProposal, savedShipment.getTradeProposal());
     }
 
-
     @Test
-    public void testCreateShipmentForAgreement_NotAccepted() {
-        Agreement agreement = new Agreement();
-        agreement.setState(State.PENDING); // Estado no aceptado
+    public void testCreateShipmentForTradeProposal_NotAccepted() {
+        TradeProposal tradeProposal = new TradeProposal();
+        tradeProposal.setStatus(TradeStatus.PENDING);
 
-        assertThrows(IllegalStateException.class, () -> shipmentService.createShipmentForAgreement(agreement));
+        assertThrows(IllegalStateException.class, () -> shipmentService.createShipmentForTradeProposal(tradeProposal));
         verify(shipmentRepository, never()).save(any(Shipment.class));
     }
 
@@ -149,13 +146,12 @@ class ShipmentServiceTest {
     public void testGetShipmentById_NotFound() {
         when(shipmentRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> shipmentService.getShipmentById(1L));
+        assertThrows(ResourceNotFoundException.class, () -> shipmentService.getShipmentById(1L));
         verify(shipmentRepository, times(1)).findById(1L);
     }
 
     @Test
     public void testUpdateShipment() {
-        // Preparar los datos de prueba
         Shipment existingShipment = new Shipment();
         existingShipment.setId(1L);
         existingShipment.setInitiatorAddress("Old Initiator Address");
@@ -166,19 +162,15 @@ class ShipmentServiceTest {
         shipmentRequestDto.setInitiatorAddress("New Initiator Address");
         shipmentRequestDto.setReceiveAddress("New Recipient Address");
         shipmentRequestDto.setDeliveryDate(LocalDateTime.now().plusDays(7));
-        shipmentRequestDto.setAgreementId(1L);
+        shipmentRequestDto.setTradeProposalId(1L);
 
-        Agreement agreement = new Agreement();
-        agreement.setId(1L);
+        TradeProposal tradeProposal = new TradeProposal();
+        tradeProposal.setId(1L);
 
-        // Simular el comportamiento de los repositorios y el mapeador
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(existingShipment));
-        when(agreementRepository.findById(1L)).thenReturn(Optional.of(agreement));
-
-        // Asegúrate de que save() retorne el existingShipment actualizado
+        when(tradeProposalRepository.findById(1L)).thenReturn(Optional.of(tradeProposal));
         when(shipmentRepository.save(any(Shipment.class))).thenReturn(existingShipment);
 
-        // Simular la conversión del ModelMapper
         ShipmentResponseDto responseDto = new ShipmentResponseDto();
         responseDto.setId(1L);
         responseDto.setInitiatorAddress("New Initiator Address");
@@ -186,26 +178,21 @@ class ShipmentServiceTest {
 
         when(modelMapper.map(any(Shipment.class), eq(ShipmentResponseDto.class))).thenReturn(responseDto);
 
-        // Ejecutar el metodo que se va a probar
         ShipmentResponseDto result = shipmentService.updateShipment(1L, shipmentRequestDto);
 
-        // Verificar que el resultado no sea nulo
         assertNotNull(result);
         assertEquals("New Initiator Address", result.getInitiatorAddress());
         assertEquals("New Recipient Address", result.getReceiveAddress());
 
-        // Verificar que se llamaron los métodos correctos en los repositorios
         verify(shipmentRepository, times(1)).save(any(Shipment.class));
     }
-
-
 
     @Test
     public void testUpdateShipment_NotFound() {
         when(shipmentRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         ShipmentRequestDto shipmentRequestDto = new ShipmentRequestDto();
-        assertThrows(RuntimeException.class, () -> shipmentService.updateShipment(1L, shipmentRequestDto));
+        assertThrows(ResourceNotFoundException.class, () -> shipmentService.updateShipment(1L, shipmentRequestDto));
         verify(shipmentRepository, times(1)).findById(anyLong());
     }
 

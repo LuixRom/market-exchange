@@ -1,7 +1,7 @@
 package com.dbp.proyectobackendmarketexchange.item.dto;
 
 import com.dbp.proyectobackendmarketexchange.item.domain.Condition;
-import com.dbp.proyectobackendmarketexchange.item.domain.Status;
+import com.dbp.proyectobackendmarketexchange.item.domain.ItemStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,7 +24,7 @@ public class ItemResponseDto {
 
     private LocalDateTime createdAt;
 
-    private Status status;
+    private ItemStatus status;
 
     private String imageUrl;
 

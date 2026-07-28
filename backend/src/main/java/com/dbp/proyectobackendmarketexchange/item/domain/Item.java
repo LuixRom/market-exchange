@@ -43,7 +43,8 @@ public class Item {
 
 
     @Enumerated(EnumType.STRING)
-    private Status status = Status.PENDING; // estado de item (Pendiente, aprobado, denegado
+    @NotNull(message = "El estado del ítem no puede ser nulo")
+    private ItemStatus status = ItemStatus.PENDING_REVIEW;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")

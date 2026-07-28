@@ -1,7 +1,7 @@
 package com.dbp.proyectobackendmarketexchange.usuario.domain;
 
-import com.dbp.proyectobackendmarketexchange.agreement.domain.Agreement;
 import com.dbp.proyectobackendmarketexchange.rating.domain.Rating;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -69,11 +69,11 @@ public class Usuario implements UserDetails {
     @OneToMany(mappedBy = "raterUsuario", cascade = CascadeType.ALL)
     private List<Rating> ratingsGiven;
 
-    @OneToMany(mappedBy = "initiator")
-    private List<Agreement> initiatedAgreements;
+    @OneToMany(mappedBy = "proposer")
+    private List<TradeProposal> proposedTradeProposals;
 
-    @OneToMany(mappedBy = "recipient")
-    private List<Agreement> receivedAgreements;
+    @OneToMany(mappedBy = "receiver")
+    private List<TradeProposal> receivedTradeProposals;
 
 
     @Override

@@ -2,6 +2,7 @@ package com.dbp.proyectobackendmarketexchange.exception;
 
 import com.dbp.proyectobackendmarketexchange.auth.exception.UserAlreadyExistException;
 
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.AuthenticationException;
@@ -49,6 +50,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserAlreadyExistException.class)
     public ProblemDetail handleUserAlreadyExistException(UserAlreadyExistException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidTradeProposalException.class)
+    public ProblemDetail handleInvalidTradeProposalException(InvalidTradeProposalException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler({TradeProposalConflictException.class, PessimisticLockingFailureException.class})
+    public ProblemDetail handleTradeProposalConflictException(RuntimeException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "No se pudo procesar la propuesta, intenta nuevamente");
     }
 
     @ExceptionHandler(Exception.class)

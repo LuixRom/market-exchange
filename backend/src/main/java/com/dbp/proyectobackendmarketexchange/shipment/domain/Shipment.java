@@ -1,6 +1,6 @@
 package com.dbp.proyectobackendmarketexchange.shipment.domain;
 
-import com.dbp.proyectobackendmarketexchange.agreement.domain.Agreement;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Getter
@@ -19,8 +20,8 @@ public class Shipment {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "agreement_id")
-    private Agreement agreement;
+    @JoinColumn(name = "trade_proposal_id")
+    private TradeProposal tradeProposal;
 
     @NotBlank(message = "La dirección del iniciador no puede estar vacía")
     private String initiatorAddress;
@@ -30,5 +31,9 @@ public class Shipment {
 
     @Future(message = "La fecha de entrega debe estar en el futuro")
     private LocalDateTime deliveryDate;
+
+    @NotNull(message = "El estado del envío no puede ser nulo")
+    @Enumerated(EnumType.STRING)
+    private ShipmentStatus status = ShipmentStatus.PENDING;
 
 }

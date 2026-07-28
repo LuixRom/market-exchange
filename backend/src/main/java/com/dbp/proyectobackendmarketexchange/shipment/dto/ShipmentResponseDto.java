@@ -1,5 +1,6 @@
 package com.dbp.proyectobackendmarketexchange.shipment.dto;
 
+import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,5 +14,6 @@ public class ShipmentResponseDto {
     private String initiatorAddress;
     private String receiveAddress;
     private LocalDateTime deliveryDate;
-    private Long agreementId;
+    private Long tradeProposalId;
+    private ShipmentStatus status;
 }
