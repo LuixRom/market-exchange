@@ -96,7 +96,6 @@ public class SecurityConfig {
                         // Acceso de ADMIN a agreements
 
                         .requestMatchers(HttpMethod.DELETE, "/agreements/{id}").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/agreements/{id}").hasAuthority("ADMIN")
 
                         // Acceso de USER a sus propios datos de usuario
                         .requestMatchers(HttpMethod.GET, "/usuarios/me").hasAuthority("USER")

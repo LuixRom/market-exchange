@@ -1,5 +1,6 @@
 package com.dbp.proyectobackendmarketexchange.shipment.dto;
 
+import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,8 @@ public class ShipmentRequestDto {
     @NotNull(message = "La fecha de entrega no puede ser nula")
     private LocalDateTime deliveryDate;
 
-    @NotNull(message = "El acuerdo no puede ser nulo")
-    private Long agreementId;
+    @NotNull(message = "La propuesta de intercambio no puede ser nula")
+    private Long tradeProposalId;
+
+    private ShipmentStatus status;
 }

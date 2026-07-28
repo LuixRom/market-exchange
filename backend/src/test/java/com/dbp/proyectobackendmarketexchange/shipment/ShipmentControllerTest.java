@@ -1,12 +1,12 @@
 package com.dbp.proyectobackendmarketexchange.shipment;
 
-import com.dbp.proyectobackendmarketexchange.agreement.domain.Agreement;
-import com.dbp.proyectobackendmarketexchange.agreement.infrastructure.AgreementRepository;
 import com.dbp.proyectobackendmarketexchange.config.JwtService;
 import com.dbp.proyectobackendmarketexchange.shipment.application.ShipmentController;
 import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentService;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentRequestDto;
 import com.dbp.proyectobackendmarketexchange.shipment.dto.ShipmentResponseDto;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
+import com.dbp.proyectobackendmarketexchange.tradeproposal.infrastructure.TradeProposalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ public class ShipmentControllerTest {
     private ShipmentService shipmentService;
 
     @MockBean
-    private AgreementRepository agreementRepository;
+    private TradeProposalRepository tradeProposalRepository;
 
     // Si hay un JwtService u otro servicio de seguridad, moca también
     @MockBean
@@ -62,30 +62,30 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testCreateShipmentForAgreement() throws Exception {
+    public void testCreateShipmentForTradeProposal() throws Exception {
         ShipmentRequestDto requestDto = new ShipmentRequestDto();
-        requestDto.setAgreementId(1L);
+        requestDto.setTradeProposalId(1L);
         requestDto.setInitiatorAddress("Initiator Address");
         requestDto.setReceiveAddress("Recipient Address");
         requestDto.setDeliveryDate(LocalDateTime.now().plusDays(7));
 
-        Agreement agreement = new Agreement();
-        when(agreementRepository.findById(1L)).thenReturn(Optional.of(agreement));
+        TradeProposal tradeProposal = new TradeProposal();
+        when(tradeProposalRepository.findById(1L)).thenReturn(Optional.of(tradeProposal));
 
         mockMvc.perform(post("/shipments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk());
 
-        verify(shipmentService, times(1)).createShipmentForAgreement(any(Agreement.class));
+        verify(shipmentService, times(1)).createShipmentForTradeProposal(any(TradeProposal.class));
     }
 
     @Test
-    public void testCreateShipmentForAgreement_AgreementNotFound() throws Exception {
-        when(agreementRepository.findById(1L)).thenReturn(Optional.empty());
+    public void testCreateShipmentForTradeProposal_TradeProposalNotFound() throws Exception {
+        when(tradeProposalRepository.findById(1L)).thenReturn(Optional.empty());
 
         ShipmentRequestDto requestDto = new ShipmentRequestDto();
-        requestDto.setAgreementId(1L);
+        requestDto.setTradeProposalId(1L);
         requestDto.setInitiatorAddress("Initiator Address");
         requestDto.setReceiveAddress("Recipient Address");
         requestDto.setDeliveryDate(LocalDateTime.now().plusDays(7));
@@ -95,7 +95,7 @@ public class ShipmentControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isNotFound());
 
-        verify(shipmentService, never()).createShipmentForAgreement(any(Agreement.class));
+        verify(shipmentService, never()).createShipmentForTradeProposal(any(TradeProposal.class));
     }
 
     @Test
@@ -115,7 +115,7 @@ public class ShipmentControllerTest {
     @Test
     public void testUpdateShipment() throws Exception {
         ShipmentRequestDto requestDto = new ShipmentRequestDto();
-        requestDto.setAgreementId(1L);
+        requestDto.setTradeProposalId(1L);
         requestDto.setInitiatorAddress("Initiator Address");
         requestDto.setReceiveAddress("Recipient Address");
         requestDto.setDeliveryDate(LocalDateTime.now().plusDays(7));

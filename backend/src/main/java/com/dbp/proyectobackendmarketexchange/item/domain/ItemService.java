@@ -71,7 +71,7 @@ public class ItemService {
         item.setCondition(itemDto.getCondition());
         item.setCategory(category);
         item.setUsuario(user);
-        item.setStatus(Status.PENDING);
+        item.setStatus(ItemStatus.PENDING_REVIEW);
 
         // Guardar el ítem primero para obtener su ID
         Item savedItem = itemRepository.save(item);
@@ -111,9 +111,9 @@ public class ItemService {
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
 
         if (approve) {
-            item.setStatus(Status.APPROVED); // Aprobar el ítem
+            item.setStatus(ItemStatus.APPROVED);
         } else {
-            item.setStatus(Status.REJECTED); // Rechazar el ítem
+            item.setStatus(ItemStatus.REJECTED);
         }
 
         itemRepository.save(item);
