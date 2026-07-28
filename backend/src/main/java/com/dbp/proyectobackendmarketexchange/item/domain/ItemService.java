@@ -10,41 +10,40 @@ import com.dbp.proyectobackendmarketexchange.exception.ForbiddenOperationExcepti
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemRequestDto;
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemResponseDto;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
+import com.dbp.proyectobackendmarketexchange.storage.domain.StorageObject;
+import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
+import com.dbp.proyectobackendmarketexchange.storage.infrastructure.StorageServiceRegistry;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.Usuario;
 import com.dbp.proyectobackendmarketexchange.usuario.infrastructure.UsuarioRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.stream.Collectors;
 import java.util.List;
 
 
-
-
 @Service
 public class ItemService {
+    private static final String IMAGE_DIRECTORY = "items";
+
     private final ItemRepository itemRepository;
     private final CategoryRepository categoryRepository;
     private final UsuarioRepository usuarioRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AuthorizationUtils authorizationUtils;
+    private final StorageServiceRegistry storageServiceRegistry;
 
-
-    public static final String IMAGE_UPLOAD_DIR = "src/main/java/com/dbp/proyectobackendmarketexchange/imagenes";
-
-    public ItemService(ApplicationEventPublisher eventPublisher, ItemRepository itemRepository, CategoryRepository categoryRepository, UsuarioRepository usuarioRepository, AuthorizationUtils authorizationUtils) {
+    public ItemService(ApplicationEventPublisher eventPublisher, ItemRepository itemRepository, CategoryRepository categoryRepository,
+                        UsuarioRepository usuarioRepository, AuthorizationUtils authorizationUtils, StorageServiceRegistry storageServiceRegistry) {
         this.itemRepository = itemRepository;
         this.categoryRepository = categoryRepository;
         this.usuarioRepository = usuarioRepository;
         this.authorizationUtils = authorizationUtils;
         this.eventPublisher = eventPublisher;
+        this.storageServiceRegistry = storageServiceRegistry;
     }
 
     public ItemResponseDto createItem(ItemRequestDto itemDto) {
@@ -78,25 +77,10 @@ public class ItemService {
 
         // Manejar la imagen
         if (itemDto.getImage() != null && !itemDto.getImage().isEmpty()) {
-            try {
-                // Crear un nombre de archivo único
-                String filename = "item_" + savedItem.getId() + "_" + System.currentTimeMillis() + ".jpg";
-
-                // Crear la ruta del archivo dentro de "uploads/"
-                Path filePath = Paths.get(IMAGE_UPLOAD_DIR, filename);
-
-                // Asegurarse de que la carpeta exista
-                Files.createDirectories(filePath.getParent());
-
-                // Guardar el archivo en el sistema
-                Files.copy(itemDto.getImage().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                // Guardar la ruta relativa en el item
-                savedItem.setImagePath(filename);
-                itemRepository.save(savedItem);
-            } catch (IOException e) {
-                throw new RuntimeException("Error al guardar la imagen", e);
-            }
+            StorageObject stored = storageServiceRegistry.getDefault().store(itemDto.getImage(), IMAGE_DIRECTORY);
+            savedItem.setImageKey(stored.storageKey());
+            savedItem.setImageProvider(stored.provider());
+            itemRepository.save(savedItem);
         }
 
         eventPublisher.publishEvent(new ItemCreatedEvent(this, savedItem));
@@ -105,6 +89,56 @@ public class ItemService {
         return mapItemToDto(savedItem);
     }
 
+    /**
+     * Reemplaza la imagen principal del item. Orden deliberado (sin @Transactional, igual
+     * que el resto de esta clase): guardar el archivo NUEVO primero, actualizar la fila en
+     * base, y recién ahí borrar el archivo VIEJO -así el Item nunca queda apuntando a un
+     * archivo inexistente, incluso si algún paso falla a mitad de camino-.
+     */
+    public ItemResponseDto replaceItemImage(Long itemId, MultipartFile image) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+
+        if (!authorizationUtils.isAdminOrResourceOwner(item.getUsuario().getId())) {
+            throw new ForbiddenOperationException("No tienes permiso para reemplazar la imagen de este ítem.");
+        }
+
+        if (item.getStatus() == ItemStatus.RESERVED || item.getStatus() == ItemStatus.EXCHANGED) {
+            throw new IllegalStateException("No se puede modificar la imagen de un ítem " + item.getStatus());
+        }
+
+        String previousKey = item.getImageKey();
+        StorageProvider previousProvider = item.getImageProvider();
+
+        StorageObject stored = storageServiceRegistry.getDefault().store(image, IMAGE_DIRECTORY);
+
+        try {
+            item.setImageKey(stored.storageKey());
+            item.setImageProvider(stored.provider());
+            itemRepository.save(item);
+        } catch (RuntimeException e) {
+            // Compensación: la fila no se pudo actualizar, así que el archivo nuevo queda
+            // huérfano -lo borramos y revertimos el Item en memoria para que siga
+            // apuntando al archivo viejo, que nunca se tocó-.
+            item.setImageKey(previousKey);
+            item.setImageProvider(previousProvider);
+            storageServiceRegistry.getDefault().delete(stored.storageKey());
+            throw e;
+        }
+
+        if (previousKey != null) {
+            try {
+                // Best-effort: si falla el borrado del archivo viejo, se acepta un huérfano
+                // en storage -el Item ya quedó consistente apuntando al archivo nuevo-.
+                storageServiceRegistry.getDefault().delete(previousKey);
+            } catch (RuntimeException e) {
+                // no-op: el reemplazo ya se completó con éxito, un huérfano en storage no
+                // debe hacer fallar la operación completa.
+            }
+        }
+
+        return mapItemToDto(item);
+    }
 
     public ItemResponseDto approveItem(Long itemId, Boolean approve) {
         Item item = itemRepository.findById(itemId)
@@ -137,9 +171,6 @@ public class ItemService {
         existingItem.setDescription(itemRequestDto.getDescription());
         existingItem.setCondition(itemRequestDto.getCondition());
         existingItem.setCategory(category);
-
-        // Manejar la imagen si es necesario
-        // Similar al método createItem
 
         Item updatedItem = itemRepository.save(existingItem);
 
@@ -248,7 +279,7 @@ public class ItemService {
             responseDto.setCategoryName("Categoría desconocida");
         }
 
-        if (item.getImagePath() != null) {
+        if (item.getImageKey() != null) {
             responseDto.setImageUrl("/item/" + item.getId() + "/image");
         }
 

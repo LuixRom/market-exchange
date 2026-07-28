@@ -10,9 +10,12 @@ import java.time.LocalDateTime;
 public class RatingResponseDto {
 
     private Long id;
-    private int rating;
+    private Long tradeProposalId;
+    private int score;
     private String comment;
-    private String raterUsuarioNombre;
-    private String usuarioNombre; // Usuario que recibe la calificación
+    private Long reviewerId;
+    private String reviewerName;
+    private Long reviewedUserId;
+    private String reviewedUserName;
     private LocalDateTime createdAt;
 }

@@ -36,4 +36,24 @@ public class Shipment {
     @Enumerated(EnumType.STRING)
     private ShipmentStatus status = ShipmentStatus.PENDING;
 
+    private String trackingCode;
+
+    @NotNull
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+    private LocalDateTime preparedAt;
+    private LocalDateTime shippedAt;
+    private LocalDateTime deliveredAt;
+    private LocalDateTime cancelledAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

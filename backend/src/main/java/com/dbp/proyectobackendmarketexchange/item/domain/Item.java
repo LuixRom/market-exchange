@@ -1,6 +1,7 @@
 package com.dbp.proyectobackendmarketexchange.item.domain;
 
 import com.dbp.proyectobackendmarketexchange.category.domain.Category;
+import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.Usuario;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -66,7 +67,9 @@ public class Item {
         this.updatedAt = LocalDateTime.now();
     }
 
-    private String imagePath;
+    private String imageKey;
 
+    @Enumerated(EnumType.STRING)
+    private StorageProvider imageProvider;
 
 }

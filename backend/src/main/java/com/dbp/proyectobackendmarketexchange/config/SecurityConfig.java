@@ -81,9 +81,10 @@ public class SecurityConfig {
 
                         // Acceso de USER a ratings
                         .requestMatchers(HttpMethod.POST, "/ratings/crear").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.GET, "/ratings/usuario/{usuarioId}/reputation").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/ratings/usuario/{usuarioId}").hasAuthority("USER")
-                        .requestMatchers(HttpMethod.DELETE, "/ratings/{id}").hasAuthority("USER")
                         // Acceso de ADMIN a ratings
+                        .requestMatchers(HttpMethod.DELETE, "/ratings/{id}").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/ratings/listar").hasAuthority("ADMIN")
 
 
@@ -96,6 +97,16 @@ public class SecurityConfig {
                         // Acceso de ADMIN a agreements
 
                         .requestMatchers(HttpMethod.DELETE, "/agreements/{id}").hasAuthority("ADMIN")
+
+                        // Acceso de USER (proposer/receiver, verificado en el servicio con
+                        // AuthorizationUtils) a shipments; GET listado global y DELETE quedan
+                        // ADMIN vía la regla catch-all de abajo.
+                        .requestMatchers(HttpMethod.GET, "/shipments/{id}").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/shipments/{id}").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/shipments/{id}/prepare").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/shipments/{id}/ship").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/shipments/{id}/deliver").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/shipments/{id}/cancel").hasAnyAuthority("USER", "ADMIN")
 
                         // Acceso de USER a sus propios datos de usuario
                         .requestMatchers(HttpMethod.GET, "/usuarios/me").hasAuthority("USER")

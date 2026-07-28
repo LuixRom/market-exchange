@@ -63,10 +63,10 @@ public class Usuario implements UserDetails {
 
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "reviewedUser", cascade = CascadeType.ALL)
     private List<Rating> ratingsReceived;
 
-    @OneToMany(mappedBy = "raterUsuario", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
     private List<Rating> ratingsGiven;
 
     @OneToMany(mappedBy = "proposer")
