@@ -6,7 +6,6 @@ import com.dbp.proyectobackendmarketexchange.event.usuario.UsuarioCreadoEvent;
 import com.dbp.proyectobackendmarketexchange.exception.InvalidUserFieldException;
 import com.dbp.proyectobackendmarketexchange.exception.ResourceNotFoundException;
 import com.dbp.proyectobackendmarketexchange.exception.ForbiddenOperationException;
-import com.dbp.proyectobackendmarketexchange.item.domain.ItemService;
 import com.dbp.proyectobackendmarketexchange.usuario.dto.UsuarioRequestDto;
 import com.dbp.proyectobackendmarketexchange.usuario.dto.UsuarioResponseDto;
 import com.dbp.proyectobackendmarketexchange.usuario.infrastructure.UsuarioRepository;
