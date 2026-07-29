@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { usuario } from "../services/user/user"; // Servicio de usuario
 import { Agreement } from "../services/agreement/Agreement"; // Servicio de acuerdos
 import { AgreementResponse } from "../interfaces/agreement/AgreementResponse"; // Interfaz de respuesta de acuerdo
 import { useNavigate } from "react-router-dom";
+import { Input } from "./ui/Input";
+import { Button } from "./ui/Button";
+import { useToast } from "./ui/Toast";
+import TradeCard from "./TradeCard";
+import { staggerChildren, slideUp } from "../lib/motion";
 
 export default function UserTradesPending() {
     const [trades, setTrades] = useState<AgreementResponse[]>([]);
@@ -11,6 +17,7 @@ export default function UserTradesPending() {
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const navigate = useNavigate();
+    const { toast } = useToast();
     // Obtener el ID del usuario autenticado al montar el componente
     useEffect(() => {
         async function fetchUserId() {
@@ -67,8 +74,10 @@ export default function UserTradesPending() {
             setFilteredTrades((prev) =>
                 prev.filter((trade) => trade.id !== tradeId)
             );
+            toast({ title: "Tradeo aprobado", variant: "success" });
         } catch (error) {
             console.error("Error al aprobar el tradeo:", error);
+            toast({ title: "No se pudo aprobar el tradeo", variant: "danger" });
         }
     };
 
@@ -80,8 +89,10 @@ export default function UserTradesPending() {
             setFilteredTrades((prev) =>
                 prev.filter((trade) => trade.id !== tradeId)
             );
+            toast({ title: "Tradeo denegado", variant: "success" });
         } catch (error) {
             console.error("Error al denegar el tradeo:", error);
+            toast({ title: "No se pudo denegar el tradeo", variant: "danger" });
         }
     };
 
@@ -90,80 +101,68 @@ export default function UserTradesPending() {
     };
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-3xl mx-auto mt-10">
-            <h2 className="text-2xl font-bold text-blue-700 mb-4">Mis Tradeos Pendientes</h2>
+        <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Mis Tradeos Pendientes</h2>
 
             {/* Buscador */}
             <div className="mb-6">
-                <label
-                    htmlFor="search"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
                     Buscar por ítem:
                 </label>
-                <input
+                <Input
                     id="search"
                     type="text"
                     value={searchTerm}
                     onChange={handleSearchChange}
                     placeholder="Escribe aquí para buscar tradeos..."
-                    className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
                 />
             </div>
             {/* Mostrar errores */}
             {errorMessage && (
-                <div className="text-red-500 text-center mb-4">{errorMessage}</div>
+                <div className="text-danger text-center mb-4">{errorMessage}</div>
             )}
 
             {/* Lista de tradeos */}
             {filteredTrades.length > 0 ? (
-                <ul className="space-y-4">
+                <motion.ul
+                    className="space-y-4"
+                    variants={staggerChildren}
+                    initial="hidden"
+                    animate="visible"
+                >
                     {filteredTrades.map((trade) => (
-                        <li
-                            onClick={() => handleTradeClick(trade.id)} // Navegar al hacer clic
-                            key={trade.id}
-                            className="border border-gray-300 p-4 rounded shadow-sm hover:shadow-md"
-                        >   
-                            <h3 className="text-lg font-bold text-blue-600">Trade ID: {trade.id}</h3>
-                            <p className="text-gray-700">
-                                <strong>Ítem Ofrecido:</strong> {trade.itemIniName}
-                            </p>
-                            <p className="text-gray-700">
-                                <strong>Ítem Recibido:</strong> {trade.itemFinName}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                <strong>Iniciado por:</strong> {trade.iniUsername}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                <strong>Recibido por:</strong> {trade.finUsername}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                <strong>Estado:</strong> {trade.state}
-                            </p>
-                            <div className="flex justify-end gap-4 mt-4">
-                                <button
-                                    onClick={(event) => {
-                                        event.stopPropagation(); // Detener la propagación del clic
-                                        handleApprove(trade.id);
-                                    }}
-                                    className="bg-green-500 text-white px-4 py-2 rounded"
-                                >
-                                    Aprobar
-                                </button>
-                                <button
-                                    onClick={(event) => {
-                                        event.stopPropagation(); // Detener la propagación del clic
-                                        handleReject(trade.id);
-                                    }}
-                                    className="bg-red-500 text-white px-4 py-2 rounded"
-                                >
-                                    Denegar
-                                </button>
-                            </div>
-
-                        </li>
+                        <motion.li key={trade.id} variants={slideUp}>
+                            <TradeCard
+                                trade={trade}
+                                onClick={() => handleTradeClick(trade.id)}
+                                actions={
+                                    <>
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                handleApprove(trade.id);
+                                            }}
+                                        >
+                                            Aprobar
+                                        </Button>
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                handleReject(trade.id);
+                                            }}
+                                        >
+                                            Denegar
+                                        </Button>
+                                    </>
+                                }
+                            />
+                        </motion.li>
                     ))}
-                </ul>
+                </motion.ul>
             ) : (
                 <p className="text-gray-500">
                     {searchTerm

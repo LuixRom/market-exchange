@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { item } from "../services/item/item"; // Servicio de ítems
 import { usuario } from "../services/user/user"; // Servicio de usuario
 import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { fetchImage } from "../services/image/image";
 import { getApiBaseUrl } from "../apis/api";
+import { Card } from "./ui/Card";
+import { Input } from "./ui/Input";
+import { staggerChildren, slideUp } from "../lib/motion";
 
 export default function UserItems() {
     const [items, setItems] = useState<ItemResponse[]>([]); // Estado para almacenar los ítems del usuario
@@ -51,7 +55,7 @@ export default function UserItems() {
                 console.error("No se encontró un token de autenticación.");
                 return;
             }
-    
+
             const imagePromises = items.map(async (item) => {
                 try {
                     const imageUrl = await fetchImage(`${getApiBaseUrl()}${item.imageUrl}`, accessToken);
@@ -60,18 +64,17 @@ export default function UserItems() {
                     return { id: item.id, url: "/default-placeholder.png" };
                 }
             });
-    
+
             const images = await Promise.all(imagePromises);
             setImageUrls(images.reduce((acc, img) => ({ ...acc, [img.id]: img.url }), {}));
         };
-    
+
         if (items.length > 0) {
             loadImages();
-
         }
     }, [items]); // Ejecuta esto solo cuando items cambie
 
-    
+
     // Manejar cambios en el término de búsqueda
     function handleSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
         const term = event.target.value.toLowerCase(); // Convierte el término a minúsculas
@@ -85,66 +88,68 @@ export default function UserItems() {
     }
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-3xl mx-auto mt-10">
-            <h2 className="text-2xl font-bold text-blue-700 mb-4">Mis Ítems Publicados</h2>
+        <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Mis Ítems Publicados</h2>
 
             {/* Buscador */}
             <div className="mb-6">
-                <label
-                    htmlFor="search"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
                     Buscar por nombre:
                 </label>
-                <input
+                <Input
                     id="search"
                     type="text"
                     value={searchTerm}
                     onChange={handleSearchChange}
                     placeholder="Escribe aquí para buscar ítems..."
-                    className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
                 />
             </div>
 
             {/* Mostrar errores */}
             {errorMessage && (
-                <div className="text-red-500 text-center mb-4">{errorMessage}</div>
+                <div className="text-danger text-center mb-4">{errorMessage}</div>
             )}
 
             {/* Lista de ítems */}
             {filteredItems.length > 0 ? (
-                <ul className="space-y-4">
+                <motion.ul
+                    className="space-y-4"
+                    variants={staggerChildren}
+                    initial="hidden"
+                    animate="visible"
+                >
                     {filteredItems.map((item) => (
-                        <li
-                            key={item.id}
-                            className="border border-gray-300 p-4 rounded shadow-sm hover:shadow-md"
-                        >
-                            <h3 className="text-lg font-bold text-blue-600">{item.name}</h3>
-                            <img
+                        <motion.li key={item.id} variants={slideUp}>
+                            <Card className="p-4 flex gap-4">
+                                <img
                                     src={imageUrls[item.id] || "/default-placeholder.png"}
                                     alt={item.name}
-                                    className="w-full h-auto mt-2"
+                                    className="w-24 h-24 object-cover rounded-card flex-shrink-0"
                                 />
-                            <p className="text-gray-700">{item.description}</p>
-                            <p className="text-sm text-gray-500">
-                                <strong>Categoría:</strong> {item.categoryName}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                <strong>Condicion:</strong> {item.condition}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                <strong>Estado:</strong> {item.status}
-                            </p>
-                        </li>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
+                                    <p className="text-gray-600">{item.description}</p>
+                                    <p className="text-sm text-gray-500">
+                                        <strong>Categoría:</strong> {item.categoryName}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        <strong>Condición:</strong> {item.condition}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        <strong>Estado:</strong> {item.status}
+                                    </p>
+                                </div>
+                            </Card>
+                        </motion.li>
                     ))}
-                </ul>
+                </motion.ul>
             ) : (
                 <p className="text-gray-500">
                     {searchTerm
                         ? "No se encontraron ítems que coincidan con la búsqueda."
                         : "No tienes ítems publicados."}
                 </p>
-            )}  
+            )}
         </div>
     );
 }

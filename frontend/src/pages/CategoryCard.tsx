@@ -1,5 +1,7 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { Card } from "../components/ui/Card";
 
 interface CategoryCardProps {
   id: number;
@@ -15,13 +17,15 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ id, name, description }) =>
   };
 
   return (
-    <div
-      onClick={handleCardClick}
-      className="bg-purple-600 text-white text-center p-4 rounded-md hover:bg-purple-700 transition cursor-pointer"
-    >
-      <h3 className="text-lg font-semibold">{name}</h3>
-      <p className="text-sm">{description}</p>
-    </div>
+    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.15 }}>
+      <Card
+        onClick={handleCardClick}
+        className="p-4 cursor-pointer border-l-4 border-l-primary hover:shadow-lg transition-shadow"
+      >
+        <h3 className="text-lg font-semibold text-gray-900">{name}</h3>
+        <p className="text-sm text-gray-600 mt-1">{description}</p>
+      </Card>
+    </motion.div>
   );
 };
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { item } from "../services/item/item";
 import { category } from "../services/category/category";
@@ -9,12 +10,19 @@ import {usuario} from "../services/user/user";
 import { fetchImage } from "../services/image/image"; // Nueva función
 import { Agreement } from "../services/agreement/Agreement";
 import { getApiBaseUrl } from "../apis/api";
+import { Card } from "./ui/Card";
+import { Input } from "./ui/Input";
+import { Button } from "./ui/Button";
+import { Spinner } from "./ui/Spinner";
+import { useToast } from "./ui/Toast";
+import { staggerChildren, slideUp } from "../lib/motion";
 
 
 export default function AllItems() {
     const auth = useAuth();
     const role = auth.role;
     const navigate = useNavigate(); // Hook para redirigir
+    const { toast } = useToast();
     const [items, setItems] = useState<ItemResponse[]>([]);
     const [filteredItems, setFilteredItems] = useState<ItemResponse[]>([]);
     const [categories, setCategories] = useState<CategoryResponse[]>([]);
@@ -49,7 +57,7 @@ export default function AllItems() {
                 const allCategories = await category.getAllCategories();
                 setItems(filteredItems);
                 setFilteredItems(filteredItems);
-                setCategories(allCategories);                  
+                setCategories(allCategories);
 
             } catch (error) {
                 console.error("Error al obtener los datos:", error);
@@ -80,11 +88,11 @@ export default function AllItems() {
                     return { id: item.id, url: "/default-placeholder.png" };
                 }
             });
-    
+
             const images = await Promise.all(imagePromises);
             setImageUrls(images.reduce((acc, img) => ({ ...acc, [img.id]: img.url }), {}));
         };
-    
+
         if (items.length > 0) {
             loadImages();
         }
@@ -123,8 +131,10 @@ export default function AllItems() {
             await item.approveItem(itemId, true);
             setFilteredItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
             setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+            toast({ title: "Ítem aprobado", variant: "success" });
         } catch (error) {
             console.error("Error al aprobar el ítem:", error);
+            toast({ title: "No se pudo aprobar el ítem", variant: "danger" });
         }
     };
 
@@ -133,8 +143,10 @@ export default function AllItems() {
             await item.approveItem(itemId, false);
             setFilteredItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
             setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+            toast({ title: "Ítem denegado", variant: "success" });
         } catch (error) {
             console.error("Error al denegar el ítem:", error);
+            toast({ title: "No se pudo denegar el ítem", variant: "danger" });
         }
     };
 
@@ -147,7 +159,7 @@ export default function AllItems() {
                     (agreement.id_itemFin === itemId || agreement.id_itemIni === itemId) &&
                     (agreement.id_Ini === userId || agreement.id_Fin === userId)
             );
-    
+
             if (existingAgreement) {
                 // Si ya existe un tradeo, redirige a la página del tradeo existente
                 navigate(`/dashboard/agreements/${existingAgreement.id}`);
@@ -157,51 +169,43 @@ export default function AllItems() {
             }
         } catch (error) {
             console.error("Error al verificar los tradeos existentes:", error);
-            alert("Hubo un problema al procesar la solicitud.");
+            toast({ title: "Hubo un problema al procesar la solicitud.", variant: "danger" });
         }
     };
-    
+
 
     if (loading) {
-        return <div>Cargando ítems...</div>;
+        return <Spinner label="Cargando ítems..." />;
     }
 
     return (
-        
-        <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-5xl mx-auto mt-10">
-            <h2 className="text-2xl font-bold text-black mb-6">Publicaciones Disponibles</h2>
-    
+        <div className="w-full max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Publicaciones Disponibles</h2>
+
             {/* Buscador */}
-            <div className="mb-6">
-                <label
-                    htmlFor="search"
-                    className="block text-sm font-medium text-white mb-2"
-                >
+            <div className="mb-4">
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
                     Buscar por nombre:
                 </label>
-                <input
+                <Input
                     id="search"
                     type="text"
                     value={searchTerm}
                     onChange={handleSearchChange}
                     placeholder="Escribe aquí para buscar ítems..."
-                    className="w-full p-3 bg-gray-50 text-gray-700 rounded-md shadow-md focus:outline-none focus:ring focus:ring-purple-300"
                 />
             </div>
-    
+
             {/* Filtro de categorías */}
             <div className="mb-6">
-                <label
-                    htmlFor="categories"
-                    className="block text-sm font-medium text-white mb-2"
-                >
+                <label htmlFor="categories" className="block text-sm font-medium text-gray-700 mb-2">
                     Filtrar por categoría:
                 </label>
                 <select
                     id="categories"
                     value={selectedCategory ?? ""}
                     onChange={handleCategoryChange}
-                    className="w-full p-3 bg-gray-50 text-gray-700 rounded-md shadow-md focus:outline-none focus:ring focus:ring-purple-300"
+                    className="w-full rounded-card border border-border bg-surface px-4 py-2.5 text-gray-800 shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 >
                     <option value="">Todas las categorías</option>
                     {categories.map((cat) => (
@@ -211,69 +215,77 @@ export default function AllItems() {
                     ))}
                 </select>
             </div>
-    
+
             {/* Mensaje de error */}
             {errorMessage && (
-                <div className="text-red-500 text-center mb-4">{errorMessage}</div>
+                <div className="text-danger text-center mb-4">{errorMessage}</div>
             )}
-    
+
             {/* Lista de publicaciones */}
             {filteredItems.length > 0 ? (
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.ul
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    variants={staggerChildren}
+                    initial="hidden"
+                    animate="visible"
+                >
                     {filteredItems.map((item) => (
-                        <li
-                            key={item.id}
-                            className="bg-purple-600 border border-purple-400 p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-                        >
-                            <div>
-                                <h3 className="text-lg font-bold text-white">{item.name}</h3>
+                        <motion.li key={item.id} variants={slideUp}>
+                            <Card className="overflow-hidden h-full flex flex-col">
                                 <img
                                     src={imageUrls[item.id] || "/default-placeholder.png"}
                                     alt={item.name}
-                                    className="w-full h-auto mt-2 rounded-lg"
+                                    className="w-full h-48 object-cover"
                                 />
-                                <p className="text-gray-200 mt-4">{item.description}</p>
-                                <p className="text-lg font text-gray-300">
-                                    <strong>Categoría:</strong> {item.categoryName}
-                                </p>
-                                <p className="text-lg font-sm text-gray-300">
-                                    <strong>Condición:</strong> {item.condition}
-                                </p>
-                                <p className="text-lg font-sm text-gray-300">
-                                    <strong>Publicado por:</strong> {item.userName}
-                                </p>
-                            </div>
-                         
-                            {role === "ADMIN" && (
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => handleApprove(item.id)}
-                                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md mt-4 w-full transition-colors duration-300"
-                                    >
-                                        Aprobar
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeny(item.id)}
-                                         className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md mt-4 w-full transition-colors duration-300"
-                                    >
-                                        Denegar
-                                    </button>
-                                </div>
-                            )}
-                            {role === "USER" && (
-                                <button
-                                    onClick={() => handleTrade(item.id)}
-                                    className="bg-white hover:bg-gray-200 text-purple-600 font-bold py-2 px-4 rounded-md mt-4 w-full transition-colors duration-300"
-                                >
-                                    Tradear
-                                </button>
-                            )}
+                                <div className="p-4 flex flex-col flex-1">
+                                    <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
+                                    <p className="text-gray-600 mt-2 flex-1">{item.description}</p>
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                        <span className="inline-block bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">
+                                            {item.categoryName}
+                                        </span>
+                                        <span className="inline-block bg-muted text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">
+                                            {item.condition}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-3">
+                                        Publicado por: <span className="font-medium">{item.userName}</span>
+                                    </p>
 
-                        </li>
+                                    {role === "ADMIN" && (
+                                        <div className="flex gap-3 mt-4">
+                                            <Button
+                                                onClick={() => handleApprove(item.id)}
+                                                variant="primary"
+                                                className="w-full"
+                                            >
+                                                Aprobar
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleDeny(item.id)}
+                                                variant="danger"
+                                                className="w-full"
+                                            >
+                                                Denegar
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {role === "USER" && (
+                                        <Button
+                                            onClick={() => handleTrade(item.id)}
+                                            variant="secondary"
+                                            className="w-full mt-4"
+                                        >
+                                            Tradear
+                                        </Button>
+                                    )}
+                                </div>
+                            </Card>
+                        </motion.li>
                     ))}
-                </ul>
+                </motion.ul>
             ) : (
-                <p className="text-gray-200">
+                <p className="text-gray-500">
                     {searchTerm || selectedCategory
                         ? "No se encontraron ítems que coincidan con los filtros aplicados."
                         : "No hay ítems publicados."}
@@ -281,5 +293,5 @@ export default function AllItems() {
             )}
         </div>
     );
-    
+
 }

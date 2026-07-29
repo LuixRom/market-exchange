@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { category } from "../services/category/category"; // Ruta donde tienes tu servicio
 import { CategoryResponse } from "../interfaces/category/CategoryResponse";
 import { useNavigate } from "react-router-dom";
 import CategoryCard from "./CategoryCard";
 import { useAuth } from "../context/AuthProvider";
+import { Spinner } from "../components/ui/Spinner";
+import { staggerChildren, slideUp } from "../lib/motion";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
@@ -27,34 +30,41 @@ export default function CategoriesPage() {
   }, []);
 
   if (loading) {
-    return <div>Cargando categorías...</div>; // Muestra un mensaje de carga
+    return <Spinner label="Cargando categorías..." />;
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 bg-transparent">
+    <motion.div
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 bg-transparent"
+      variants={staggerChildren}
+      initial="hidden"
+      animate="visible"
+    >
       {categories.map((cat) => (
-        <div key={cat.id}>
+        <motion.div key={cat.id} variants={slideUp}>
           <CategoryCard id={cat.id} name={cat.name} description={cat.description} />
           {role === "ADMIN" && (
             <button
               onClick={() => navigate(`/dashboard/category/edit/${cat.id}`)}
-              className="mt-2 w-full bg-white text-purple-600 py-2 px-4 rounded-lg border border-purple-600 hover:bg-purple-600 hover:text-white transition"
+              className="mt-2 w-full bg-white text-primary py-2 px-4 rounded-card border border-primary hover:bg-primary hover:text-white transition-colors"
             >
               Editar
             </button>
           )}
-        </div>
+        </motion.div>
       ))}
 
       {/* Tarjeta para crear nueva categoría */}
       {role === "ADMIN" && (
-        <div
+        <motion.div
+          variants={slideUp}
+          whileHover={{ scale: 1.03 }}
           onClick={() => navigate("/dashboard/category/create")}
-          className="flex justify-center items-center bg-purple-300 hover:bg-purple-400 text-white text-4xl font-bold rounded-lg shadow-md cursor-pointer"
+          className="flex justify-center items-center bg-primary/10 hover:bg-primary/20 text-primary text-4xl font-bold rounded-card shadow-sm cursor-pointer"
         >
           +
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

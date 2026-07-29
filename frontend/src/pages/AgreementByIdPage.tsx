@@ -6,6 +6,8 @@ import { item } from "../services/item/item";
 import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { fetchImage } from "../services/image/image"; // Función para cargar imágenes
 import { getApiBaseUrl } from "../apis/api";
+import { Card } from "../components/ui/Card";
+import { Spinner } from "../components/ui/Spinner";
 
 export default function AgreementByIdPage() {
     const { id } = useParams<{ id: string }>();
@@ -51,7 +53,7 @@ export default function AgreementByIdPage() {
                 console.error("No se encontró un token de autenticación.");
                 return;
             }
-        
+
             const promises = [
                 receptorItem &&
                     fetchImage(`${getApiBaseUrl()}${receptorItem.imageUrl}`, accessToken).then((url) => ({
@@ -64,12 +66,12 @@ export default function AgreementByIdPage() {
                         url,
                     })),
             ].filter(Boolean) as Promise<{ id: number; url: string }>[];
-        
+
             const results = await Promise.all(promises);
             const urls = results.reduce((acc, { id, url }) => ({ ...acc, [id]: url }), {});
             setImageUrls(urls);
         };
-        
+
 
         if (receptorItem || iniciadorItem) {
             loadImages();
@@ -77,17 +79,17 @@ export default function AgreementByIdPage() {
     }, [receptorItem, iniciadorItem]);
 
     if (errorMessage) {
-        return <div className="text-red-500 text-center">{errorMessage}</div>;
+        return <div className="text-danger text-center py-10">{errorMessage}</div>;
     }
 
     if (!trade) {
-        return <div>Cargando información del tradeo...</div>;
+        return <Spinner label="Cargando información del tradeo..." />;
     }
 
     return (
-        <div className="bg-gray-100 min-h-screen p-6">
-            <div className="max-w-5xl mx-auto bg-white shadow-md rounded-lg p-6">
-                <h1 className="text-2xl font-bold text-blue-700 mb-4">
+        <div className="bg-muted min-h-screen p-6">
+            <Card className="max-w-5xl mx-auto p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">
                     Tradeo {trade.id} - Estado: {trade.state}
                 </h1>
                 <div className="grid grid-cols-2 gap-4">
@@ -95,12 +97,12 @@ export default function AgreementByIdPage() {
                     <div>
                         <h2 className="text-lg font-semibold text-gray-700 mb-2">Receptor</h2>
                         {receptorItem ? (
-                            <div className="border p-4 rounded shadow-md bg-gray-100">
-                                <h3 className="text-lg font-bold text-blue-600">{receptorItem.name}</h3>
+                            <div className="border border-border p-4 rounded-card bg-muted">
+                                <h3 className="text-lg font-bold text-gray-900">{receptorItem.name}</h3>
                                 <img
                                     src={imageUrls[receptorItem.id] || "/default-placeholder.png"}
                                     alt={receptorItem.name}
-                                    className="w-full h-auto mt-2"
+                                    className="w-full h-auto mt-2 rounded-card"
                                 />
                                 <p>{receptorItem.description}</p>
                                 <p className="text-sm text-gray-500">
@@ -121,12 +123,12 @@ export default function AgreementByIdPage() {
                     <div>
                         <h2 className="text-lg font-semibold text-gray-700 mb-2">Iniciador</h2>
                         {iniciadorItem ? (
-                            <div className="border p-4 rounded shadow-md bg-gray-100">
-                                <h3 className="text-lg font-bold text-blue-600">{iniciadorItem.name}</h3>
+                            <div className="border border-border p-4 rounded-card bg-muted">
+                                <h3 className="text-lg font-bold text-gray-900">{iniciadorItem.name}</h3>
                                 <img
                                     src={imageUrls[iniciadorItem.id] || "/default-placeholder.png"}
                                     alt={iniciadorItem.name}
-                                    className="w-full h-auto mt-2"
+                                    className="w-full h-auto mt-2 rounded-card"
                                 />
                                 <p>{iniciadorItem.description}</p>
                                 <p className="text-sm text-gray-500">
@@ -144,7 +146,7 @@ export default function AgreementByIdPage() {
                         )}
                     </div>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

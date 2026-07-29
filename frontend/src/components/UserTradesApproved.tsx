@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { usuario } from "../services/user/user"; // Servicio de usuario
 import { Agreement } from "../services/agreement/Agreement"; // Servicio de acuerdos
 import { AgreementResponse } from "../interfaces/agreement/AgreementResponse"; // Interfaz de respuesta de acuerdo
 import { useNavigate } from "react-router-dom";
+import TradeCard from "./TradeCard";
+import { staggerChildren, slideUp } from "../lib/motion";
 
 export default function UserTradesAccepted() {
   const [trades, setTrades] = useState<AgreementResponse[]>([]); // Estado para almacenar los tradeos
@@ -51,41 +54,25 @@ export default function UserTradesAccepted() {
 };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-4">
-      <h2 className="text-xl font-bold text-blue-700 mb-4">
-        Últimos Tradeos Aprobados
-      </h2>
+    <div>
       {/* Mostrar errores */}
       {errorMessage && (
-        <div className="text-red-500 text-center mb-4">{errorMessage}</div>
+        <div className="text-danger text-center mb-4">{errorMessage}</div>
       )}
       {/* Lista de tradeos */}
       {trades.length > 0 ? (
-        <ul className="space-y-4">
+        <motion.ul
+          className="space-y-4"
+          variants={staggerChildren}
+          initial="hidden"
+          animate="visible"
+        >
           {trades.map((trade) => (
-            <li
-              key={trade.id} 
-               onClick={() => handleTradeClick(trade.id)} // Navegar al hacer clic
-              className="border border-gray-300 p-4 rounded shadow-sm hover:shadow-md"
-            >
-              <h3 className="text-lg font-bold text-blue-600">
-                Trade ID: {trade.id}
-              </h3>
-              <p className="text-gray-700">
-                <strong>Ítem Ofrecido:</strong> {trade.itemIniName}
-              </p>
-              <p className="text-gray-700">
-                <strong>Ítem Recibido:</strong> {trade.itemFinName}
-              </p>
-              <p className="text-sm text-gray-500">
-                <strong>Iniciado por:</strong> {trade.iniUsername}
-              </p>
-              <p className="text-sm text-gray-500">
-                <strong>Recibido por:</strong> {trade.finUsername}
-              </p>
-            </li>
+            <motion.li key={trade.id} variants={slideUp}>
+              <TradeCard trade={trade} onClick={() => handleTradeClick(trade.id)} showState={false} />
+            </motion.li>
           ))}
-        </ul>
+        </motion.ul>
       ) : (
         <p className="text-gray-500">
           No tienes tradeos aprobados recientes.

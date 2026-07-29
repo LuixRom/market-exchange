@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { item } from "../services/item/item"; // Servicio de ítems
 import { fetchImage } from "../services/image/image"; // Nueva función
 import { useAuth } from "../context/AuthProvider";
 import { getApiBaseUrl } from "../apis/api";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Spinner } from "../components/ui/Spinner";
+import { staggerChildren, slideUp } from "../lib/motion";
 
 export default function CategoryItemsPage() {
   const { role } = useAuth();
@@ -48,9 +53,9 @@ export default function CategoryItemsPage() {
     fetchItems();
   }, [id]);
 
-  if (loading) return <div>Cargando ítems...</div>;
+  if (loading) return <Spinner label="Cargando ítems..." />;
 
-  if (!items.length) return <div>No hay ítems en esta categoría.</div>;
+  if (!items.length) return <p className="text-center text-gray-500 py-10">No hay ítems en esta categoría.</p>;
 
   const handleTrade = (itemId: number) => {
     // Redirige a la página de acuerdos pasando el ID del ítem como parámetro
@@ -58,40 +63,41 @@ export default function CategoryItemsPage() {
 };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+    <motion.div
+      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4"
+      variants={staggerChildren}
+      initial="hidden"
+      animate="visible"
+    >
       {items.map((item) => (
-        <div key={item.id} className="bg-gray-200 p-4 rounded-lg shadow-md">
-           <div>
-                                <h3 className="text-lg font-bold text-blue-600">{item.name}</h3>
-                                <img
-                                    src={imageUrls[item.id] || "/default-placeholder.png"}
-                                    alt={item.name}
-                                    className="w-full h-auto mt-2"
-                                />
-
-                                <p className="text-gray-700">
-                                    <strong></strong> {item.description}
-                                    </p>
-                                <p className="text-sm text-gray-500">
-                                    <strong>Categoría:</strong> {item.categoryName}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    <strong>Condición:</strong> {item.condition}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    <strong>Publicado por:</strong> {item.userName}
-                                </p>
-                            </div>
-                            {role === "USER" && (
-                                <button
-                                    onClick={() => handleTrade(item.id)}
-                                    className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-                                >
-                                    Tradear
-                                </button>
-                            )}
-        </div>
+        <motion.div key={item.id} variants={slideUp}>
+          <Card className="overflow-hidden h-full flex flex-col">
+            <img
+              src={imageUrls[item.id] || "/default-placeholder.png"}
+              alt={item.name}
+              className="w-full h-40 object-cover"
+            />
+            <div className="p-4 flex flex-col flex-1">
+              <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
+              <p className="text-gray-600 mt-1 flex-1">{item.description}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                <strong>Categoría:</strong> {item.categoryName}
+              </p>
+              <p className="text-sm text-gray-500">
+                <strong>Condición:</strong> {item.condition}
+              </p>
+              <p className="text-sm text-gray-500">
+                <strong>Publicado por:</strong> {item.userName}
+              </p>
+              {role === "USER" && (
+                <Button onClick={() => handleTrade(item.id)} className="w-full mt-4">
+                  Tradear
+                </Button>
+              )}
+            </div>
+          </Card>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }

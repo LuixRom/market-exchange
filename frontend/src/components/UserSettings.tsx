@@ -1,16 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { usuario } from "../services/user/user"; // Importa el servicio de usuario
 import { UsuarioResponseDto } from "../interfaces/usuario/UsuarioResponseDto";
 import { UsuarioRequestDto } from "../interfaces/usuario/UsuarioRequestDto";
 import { useAuth } from "../context/AuthProvider"; // Importa el contexto de autenticación
 import { useNavigate } from "react-router-dom"; // Importa useNavigate para redirigir al usuario
+import { Input } from "./ui/Input";
+import { Button } from "./ui/Button";
+import { Dialog } from "./ui/Dialog";
+import { useToast } from "./ui/Toast";
 
 export default function UserSettings() {
     const { role } = useAuth(); // Rol del usuario, calculado una vez en AuthProvider
+    const { toast } = useToast();
     const [userInfo, setUserInfo] = useState<UsuarioResponseDto | null>(null);
     const [editMode, setEditMode] = useState<boolean>(false);
     const [formData, setFormData] = useState<UsuarioRequestDto | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const navigate = useNavigate(); // Hook para redirigir
 
     // Cargar la información del usuario al montar el componente
@@ -60,15 +67,15 @@ export default function UserSettings() {
     // Eliminar al usuario
     async function handleDeleteUser() {
         if (!userInfo) return;
-        const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar tu cuenta?");
-        if (!confirmDelete) return;
 
         try {
             await usuario.eliminarUsuario(userInfo.id);
-            alert("Cuenta eliminada con éxito.");
+            setDeleteDialogOpen(false);
+            toast({ title: "Cuenta eliminada con éxito.", variant: "success" });
             setUserInfo(null);
             navigate("/"); // Redirige al usuario a la página principal
         } catch (error: unknown) {
+            setDeleteDialogOpen(false);
             if (error instanceof Error) {
                 setErrorMessage(`Error al eliminar la cuenta: ${error.message}`);
             } else {
@@ -96,7 +103,7 @@ export default function UserSettings() {
             }
 
             const updatedUser = await usuario.actualizarUsuario(userInfo!.id, payload);
-            alert("Información actualizada con éxito.");
+            toast({ title: "Información actualizada con éxito.", variant: "success" });
             setUserInfo(updatedUser);
             setEditMode(false);
             setErrorMessage(null); // Limpia el mensaje de error
@@ -110,20 +117,21 @@ export default function UserSettings() {
     }
 
     return (
-        <div
-            className="min-h-screen flex flex-col items-center justify-center"
-            style={{
-                backgroundImage: "url('https://source.unsplash.com/random/1920x1080?technology')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-            }}
-        >
-            <div className="bg-white bg-opacity-90 shadow-md rounded p-8 max-w-lg w-full">
-                <h1 className="text-3xl font-bold mb-4 text-center text-blue-700">Configuración del Usuario</h1>
-
-                {errorMessage && (
-                    <div className="text-red-500 text-center mb-4">{errorMessage}</div>
-                )}
+        <div className="flex flex-col items-center justify-center">
+            <div className="max-w-lg w-full">
+                <AnimatePresence>
+                    {errorMessage && (
+                        <motion.div
+                            className="text-danger text-center mb-4"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {errorMessage}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {userInfo && !editMode ? (
                     <>
@@ -150,108 +158,108 @@ export default function UserSettings() {
                         </p>
 
                         <div className="mt-6 flex justify-between">
-                            <button
-                                className="bg-red-600 hover:bg-red-800 text-white font-bold py-2 px-4 rounded"
-                                onClick={handleDeleteUser}
-                            >
+                            <Button variant="danger" onClick={() => setDeleteDialogOpen(true)}>
                                 Eliminar Cuenta
-                            </button>
-                            <button
-                                className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded"
-                                onClick={() => setEditMode(true)}
-                            >
+                            </Button>
+                            <Button variant="primary" onClick={() => setEditMode(true)}>
                                 Editar Información
-                            </button>
+                            </Button>
                         </div>
                     </>
                 ) : editMode && formData ? (
                     <>
-                        <form>
-                            <div className="mb-4">
+                        <form className="space-y-4">
+                            <div>
                                 <label className="block font-bold mb-1">Nombre</label>
-                                <input
+                                <Input
                                     type="text"
                                     name="firstname"
                                     value={formData.firstname}
                                     onChange={handleInputChange}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                     required
                                 />
                             </div>
-                            <div className="mb-4">
+                            <div>
                                 <label className="block font-bold mb-1">Apellido</label>
-                                <input
+                                <Input
                                     type="text"
                                     name="lastname"
                                     value={formData.lastname}
                                     onChange={handleInputChange}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                     required
                                 />
                             </div>
-                            <div className="mb-4">
+                            <div>
                                 <label className="block font-bold mb-1">Email</label>
-                                <input
+                                <Input
                                     type="email"
                                     name="email"
                                     value={formData.email}
                                     onChange={handleInputChange}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                     required
                                 />
                             </div>
-                            <div className="mb-4">
+                            <div>
                                 <label className="block font-bold mb-1">Teléfono</label>
-                                <input
+                                <Input
                                     type="text"
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleInputChange}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                     required
                                 />
                             </div>
-                            <div className="mb-4">
+                            <div>
                                 <label className="block font-bold mb-1">Dirección</label>
                                 <textarea
                                     name="address"
                                     value={formData.address}
                                     onChange={handleInputChange}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+                                    className="w-full rounded-card border border-border bg-surface px-4 py-2.5 text-gray-800 shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                                     required
                                 ></textarea>
                             </div>
-                            <div className="mb-4">
+                            <div>
                                 <label className="block font-bold mb-1">Nueva Contraseña (opcional)</label>
-                                <input
+                                <Input
                                     type="password"
                                     name="password"
                                     value={formData.password}
                                     onChange={handleInputChange}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
                                     placeholder="Déjalo en blanco para no cambiarla"
                                 />
                             </div>
                         </form>
                         <div className="mt-6 flex justify-between">
-                            <button
-                                className="bg-gray-600 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded"
-                                onClick={() => setEditMode(false)}
-                            >
+                            <Button variant="secondary" onClick={() => setEditMode(false)}>
                                 Cancelar
-                            </button>
-                            <button
-                                className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"
-                                onClick={handleUpdateUser}
-                            >
+                            </Button>
+                            <Button variant="primary" onClick={handleUpdateUser}>
                                 Guardar Cambios
-                            </button>
+                            </Button>
                         </div>
                     </>
                 ) : (
                     <p className="text-center text-gray-500">Cargando información del usuario...</p>
                 )}
             </div>
+
+            <Dialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title="Eliminar cuenta"
+                description="¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer."
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setDeleteDialogOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button variant="danger" onClick={handleDeleteUser}>
+                            Eliminar
+                        </Button>
+                    </>
+                }
+            />
         </div>
     );
 }

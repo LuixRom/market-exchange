@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from "react";
+import { useState, useEffect, useRef, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../context/AuthProvider";
 import { useNavigate, Navigate } from "react-router-dom";
 import idle1 from "../assets/img/idle/1.png";
@@ -17,6 +18,10 @@ import cover7 from "../assets/img/cover/7.png";
 import cover8 from "../assets/img/cover/8.png";
 import { LoginRequest } from "../interfaces/auth/LoginRequest";
 import { login } from "../services/auth/login";
+import { Card } from "./ui/Card";
+import { Input } from "./ui/Input";
+import { Button } from "./ui/Button";
+import { slideUp } from "../lib/motion";
 
 const idleImages: string[] = [idle1, idle2, idle3, idle4, idle5];
 const coverImages: string[] = [cover1, cover2, cover3, cover4, cover5, cover6, cover7, cover8];
@@ -128,52 +133,67 @@ export default function LoginForm() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center relative">
+        <div className="flex flex-col items-center justify-center relative py-10">
             <img src={monsterSrc} alt="Monster" className="w-64 h-64 mb-8" />
-            <form onSubmit={handleSubmit} className="w-full max-w-md bg-white shadow-md rounded px-8 py-6 border-4 border-purple-700">
-                <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-                {error && <p className="text-red-600 mb-4">{error}</p>}
-                <div className="mb-4">
-                    <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
-                        Usuario
-                    </label>
-                    <input
-                        type="text"
-                        name="username"
-                        id="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        placeholder="mounstrito.gracioso@gmail.com"
-                        required
-                    />
-                </div>
-                <div className="mb-6">
-                    <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-                        Contraseña
-                    </label>
-                    <input
-                        type="password"
-                        name="password"
-                        id="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        onFocus={handleClaveFocus}
-                        onBlur={handleClaveBlur}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-                        placeholder="***"
-                        required
-                    />
-                </div>
-                <div className="flex items-center justify-between">
-                    <button
-                        type="submit"
-                        className="bg-purple-600 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    >
-                        Login
-                    </button>
-                </div>
-            </form>
+            <motion.div
+                className="w-full max-w-md px-4"
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
+                transition={{ duration: 0.3 }}
+            >
+                <Card className="p-8 border-0 shadow-lg">
+                    <form onSubmit={handleSubmit}>
+                        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+                        <AnimatePresence>
+                            {error && (
+                                <motion.p
+                                    className="text-danger mb-4 text-sm text-center"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {error}
+                                </motion.p>
+                            )}
+                        </AnimatePresence>
+                        <div className="mb-4">
+                            <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
+                                Usuario
+                            </label>
+                            <Input
+                                type="text"
+                                name="username"
+                                id="username"
+                                value={formData.username}
+                                onChange={handleChange}
+                                placeholder="mounstrito.gracioso@gmail.com"
+                                required
+                            />
+                        </div>
+                        <div className="mb-6">
+                            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+                                Contraseña
+                            </label>
+                            <Input
+                                type="password"
+                                name="password"
+                                id="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                onFocus={handleClaveFocus}
+                                onBlur={handleClaveBlur}
+                                placeholder="***"
+                                required
+                            />
+                        </div>
+                        <Button type="submit" variant="primary" size="lg" className="w-full">
+                            Login
+                        </Button>
+                    </form>
+                </Card>
+            </motion.div>
         </div>
     );
 }

@@ -1,10 +1,15 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { category } from "../services/category/category";
 import { usuario } from "../services/user/user"; // Importa el servicio de usuario
 import { CategoryResponse } from "../interfaces/category/CategoryResponse";
 import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { item } from "../services/item/item";
 import { useNavigate } from "react-router-dom";
+import { Card } from "./ui/Card";
+import { Input } from "./ui/Input";
+import { Button } from "./ui/Button";
+import { slideUp } from "../lib/motion";
 
 type ItemFormProps = {
     initialData: {
@@ -15,6 +20,9 @@ type ItemFormProps = {
     onSubmitSuccess: (response: ItemResponse) => void;
     onSubmitError: (error: unknown) => void;
 };
+
+const selectClassName =
+    "w-full rounded-card border border-border bg-surface px-4 py-2.5 text-gray-800 shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary";
 
 export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormProps) {
   const navigate = useNavigate();
@@ -128,89 +136,113 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
   }
 
   return (
-    <section className="flex flex-col items-center justify-center min-h-screen bg-white-100">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md bg-white shadow-md rounded px-8 py-6 border-4 border-blue-700"
+    <section className="flex flex-col items-center justify-center min-h-screen bg-white-100 py-10">
+      <motion.div
+        className="w-full max-w-md px-4"
+        variants={slideUp}
+        initial="hidden"
+        animate="visible"
+        transition={{ duration: 0.3 }}
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">Registrar Ítem</h2>
+        <Card className="p-8 border-0 shadow-lg">
+          <form onSubmit={handleSubmit}>
+            <h2 className="text-2xl font-bold mb-6 text-center">Registrar Ítem</h2>
 
-        {errorMessage && <div className="text-red-600 text-sm mb-4 text-center">{errorMessage}</div>}
-        {successMessage && <div className="text-green-600 text-sm mb-4 text-center">{successMessage}</div>}
+            <AnimatePresence>
+              {errorMessage && (
+                <motion.div
+                  className="text-danger text-sm mb-4 text-center"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {errorMessage}
+                </motion.div>
+              )}
+              {successMessage && (
+                <motion.div
+                  className="text-success text-sm mb-4 text-center"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {successMessage}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
+            <div className="mb-4">
+              <Input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Nombre del ítem"
+                required
+              />
+            </div>
 
-        <div className="mb-4">
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-            placeholder="Nombre del ítem"
-            required
-          />
-        </div>
+            <div className="mb-4">
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className={selectClassName}
+                placeholder="Descripción del ítem"
+                required
+              />
+            </div>
 
-        <div className="mb-4">
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-            placeholder="Descripción del ítem"
-            required
-          />
-        </div>
+            <div className="mb-4">
+              <select
+                name="category"
+                value={selectedCategory || ""}
+                onChange={handleCategoryChange}
+                className={selectClassName}
+                required
+              >
+                <option value="" disabled>
+                  Selecciona una categoría
+                </option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div className="mb-4">
-          <select
-            name="category"
-            value={selectedCategory || ""}
-            onChange={handleCategoryChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-            required
-          >
-            <option value="" disabled>
-              Selecciona una categoría
-            </option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="mb-4">
+              <select
+                name="condition"
+                value={formData.condition}
+                onChange={handleInputChange}
+                className={selectClassName}
+                required
+              >
+                <option value="NEW">Nuevo</option>
+                <option value="USED">Usado</option>
+              </select>
+            </div>
 
-        <div className="mb-4">
-          <select
-            name="condition"
-            value={formData.condition}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-            required
-          >
-            <option value="NEW">Nuevo</option>
-            <option value="USED">Usado</option>
-          </select>
-        </div>
+            <div className="mb-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className={`${selectClassName} file:mr-3 file:rounded-full file:border-0 file:bg-primary file:text-primary-foreground file:px-3 file:py-1.5 file:text-sm file:font-semibold`}
+                required
+              />
+            </div>
 
-        <div className="mb-4">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none"
-        >
-          Registrar Ítem
-        </button>
-      </form>
+            <Button type="submit" variant="primary" size="lg" className="w-full">
+              Registrar Ítem
+            </Button>
+          </form>
+        </Card>
+      </motion.div>
     </section>
   );
 }

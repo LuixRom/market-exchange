@@ -10,6 +10,8 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import { AuthProvider } from './context/AuthProvider';
 import { Outlet } from "react-router-dom";
 import Navbar from './components/Navbar';
+import { PageTransition } from './components/PageTransition';
+import { ToastProvider } from './components/ui/Toast';
 import HomePage from './pages/HomePage';
 import CreateCategoryPage from './pages/CreateCategoryPage';
 import EditCategoryPage from './pages/EditCategoryPage';
@@ -24,7 +26,9 @@ import AgreementByIdPage from './pages/AgreementByIdPage.tsx';
 const MainLayout = () => (
   <>
     <Navbar />
-    <Outlet /> {/* Aquí se renderizarán las rutas hijas */}
+    <PageTransition>
+      <Outlet /> {/* Aquí se renderizarán las rutas hijas */}
+    </PageTransition>
   </>
 );
 
@@ -121,8 +125,10 @@ createRoot(document.getElementById('root')!).render(
   //Quitamos el <App/> y para que pongamos nuestro RouterProvider
   
   <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ToastProvider>
   </StrictMode>
 );
