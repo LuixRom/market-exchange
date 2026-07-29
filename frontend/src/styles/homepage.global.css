@@ -1,0 +1,29 @@
+/* homepage.global.css */
+body {
+    @apply font-belleza text-gray-800;
+}
+
+.contenido-header {
+    @apply h-screen bg-center bg-cover relative;
+    background-image: url('../img/navidad.png');
+}
+
+.fondo {
+    @apply absolute top-0 left-0 h-full bg-purple-medium w-0 transition-all;
+}
+
+.menu {
+    @apply sticky top-0 bg-purple-medium text-gray-light flex justify-center py-4 z-50 space-x-10;
+}
+
+.menu a {
+    @apply hover:text-gray-100 transition;
+}
+
+.nosotros {
+    @apply text-center py-10;
+}
+
+.productos {
+    @apply bg-gray-light py-10;
+}

@@ -1,0 +1,11 @@
+.login-section {
+	width: 47%;
+}
+
+.home-section {
+	@apply bg-secondary p-4 rounded-2xl
+}
+
+.title {
+	@apply text-2xl font-bold
+}
