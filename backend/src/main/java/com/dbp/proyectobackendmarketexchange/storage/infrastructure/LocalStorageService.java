@@ -3,11 +3,11 @@ package com.dbp.proyectobackendmarketexchange.storage.infrastructure;
 import com.dbp.proyectobackendmarketexchange.exception.InvalidStorageFileException;
 import com.dbp.proyectobackendmarketexchange.exception.ResourceNotFoundException;
 import com.dbp.proyectobackendmarketexchange.exception.StorageException;
+import com.dbp.proyectobackendmarketexchange.storage.config.StorageProperties;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageObject;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageService;
 
-import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.unit.DataSize;
@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -28,16 +27,13 @@ import java.util.UUID;
 @Service
 public class LocalStorageService implements StorageService {
 
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
-
     private final Path baseDirectory;
     private final DataSize maxFileSize;
-    private final Tika tika = new Tika();
 
     public LocalStorageService(
-            @Value("${app.storage.local.base-directory:uploads}") String baseDirectory,
+            StorageProperties storageProperties,
             @Value("${spring.servlet.multipart.max-file-size:1MB}") DataSize maxFileSize) {
-        this.baseDirectory = Paths.get(baseDirectory).normalize();
+        this.baseDirectory = Paths.get(storageProperties.getLocal().getBaseDirectory()).normalize();
         this.maxFileSize = maxFileSize;
     }
 
@@ -62,14 +58,9 @@ public class LocalStorageService implements StorageService {
             throw new StorageException("No se pudo leer el archivo", e);
         }
 
-        // Detección de MIME por contenido real (no confía en el Content-Type del cliente
-        // ni en la extensión del nombre original, que son falsificables).
-        String contentType = tika.detect(content);
-        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new InvalidStorageFileException("Tipo de archivo no permitido: " + contentType);
-        }
+        String contentType = ImageContentTypes.detectAndValidate(content);
 
-        String key = directory + "/" + UUID.randomUUID() + extensionFor(contentType);
+        String key = directory + "/" + UUID.randomUUID() + ImageContentTypes.extensionFor(contentType);
         Path targetPath = resolve(key);
 
         try {
@@ -125,14 +116,5 @@ public class LocalStorageService implements StorageService {
             throw new InvalidStorageFileException("Referencia de almacenamiento inválida");
         }
         return resolved;
-    }
-
-    private String extensionFor(String contentType) {
-        return switch (contentType) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
-            default -> "";
-        };
     }
 }

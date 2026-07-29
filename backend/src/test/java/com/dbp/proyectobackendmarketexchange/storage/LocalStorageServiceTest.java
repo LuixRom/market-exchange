@@ -2,6 +2,7 @@ package com.dbp.proyectobackendmarketexchange.storage;
 
 import com.dbp.proyectobackendmarketexchange.exception.InvalidStorageFileException;
 import com.dbp.proyectobackendmarketexchange.exception.ResourceNotFoundException;
+import com.dbp.proyectobackendmarketexchange.storage.config.StorageProperties;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageObject;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
 import com.dbp.proyectobackendmarketexchange.storage.infrastructure.LocalStorageService;
@@ -32,7 +33,9 @@ class LocalStorageServiceTest {
 
     @BeforeEach
     void setUp() {
-        storageService = new LocalStorageService(tempDir.toString(), DataSize.ofMegabytes(10));
+        StorageProperties storageProperties = new StorageProperties();
+        storageProperties.getLocal().setBaseDirectory(tempDir.toString());
+        storageService = new LocalStorageService(storageProperties, DataSize.ofMegabytes(10));
     }
 
     @Test
