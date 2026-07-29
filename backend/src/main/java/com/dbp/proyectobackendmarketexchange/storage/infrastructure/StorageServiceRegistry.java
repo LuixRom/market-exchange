@@ -1,10 +1,10 @@
 package com.dbp.proyectobackendmarketexchange.storage.infrastructure;
 
 import com.dbp.proyectobackendmarketexchange.exception.StorageException;
+import com.dbp.proyectobackendmarketexchange.storage.config.StorageProperties;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageService;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -31,11 +31,10 @@ public class StorageServiceRegistry {
     private final Map<StorageProvider, StorageService> byProvider;
     private final StorageProvider defaultProvider;
 
-    public StorageServiceRegistry(List<StorageService> storageServices,
-                                   @Value("${app.storage.provider:local}") String defaultProvider) {
+    public StorageServiceRegistry(List<StorageService> storageServices, StorageProperties storageProperties) {
         this.byProvider = storageServices.stream()
                 .collect(Collectors.toMap(StorageService::getProviderName, Function.identity()));
-        this.defaultProvider = StorageProvider.valueOf(defaultProvider.trim().toUpperCase());
+        this.defaultProvider = storageProperties.getProvider();
     }
 
     public StorageService getDefault() {
