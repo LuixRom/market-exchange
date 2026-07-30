@@ -26,6 +26,16 @@ public class TradeProposalController {
         return ResponseEntity.ok(tradeProposalService.getAllTradeProposals());
     }
 
+    @GetMapping("/sent")
+    public ResponseEntity<List<TradeProposalResponseDto>> getSentTradeProposals() {
+        return ResponseEntity.ok(tradeProposalService.getSentTradeProposals());
+    }
+
+    @GetMapping("/received")
+    public ResponseEntity<List<TradeProposalResponseDto>> getReceivedTradeProposals() {
+        return ResponseEntity.ok(tradeProposalService.getReceivedTradeProposals());
+    }
+
     @PostMapping
     public ResponseEntity<TradeProposalResponseDto> createTradeProposal(@Valid @RequestBody TradeProposalRequestDto requestDto) {
         TradeProposalResponseDto responseDto = tradeProposalService.createTradeProposal(requestDto);
@@ -45,6 +55,11 @@ public class TradeProposalController {
     @PutMapping("/{id}/reject")
     public ResponseEntity<TradeProposalResponseDto> rejectTradeProposal(@PathVariable Long id) {
         return ResponseEntity.ok(tradeProposalService.rejectTradeProposal(id));
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<TradeProposalResponseDto> cancelTradeProposal(@PathVariable Long id) {
+        return ResponseEntity.ok(tradeProposalService.cancelTradeProposal(id));
     }
 
     @DeleteMapping("/{id}")

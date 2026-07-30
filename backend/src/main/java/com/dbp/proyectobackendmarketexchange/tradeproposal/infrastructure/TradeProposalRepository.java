@@ -19,6 +19,8 @@ import java.util.Optional;
 public interface TradeProposalRepository extends JpaRepository<TradeProposal, Long> {
 
     List<TradeProposal> findByStatus(TradeStatus status);
+    List<TradeProposal> findByProposerIdOrderByCreatedAtDesc(Long proposerId);
+    List<TradeProposal> findByReceiverIdOrderByCreatedAtDesc(Long receiverId);
 
     boolean existsByOfferedItemIdAndRequestedItemIdAndStatus(Long offeredItemId, Long requestedItemId, TradeStatus status);
 

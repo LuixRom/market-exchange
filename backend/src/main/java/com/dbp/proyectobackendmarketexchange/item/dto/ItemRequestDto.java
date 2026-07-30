@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 @Getter
 @Setter
@@ -29,5 +30,6 @@ public class ItemRequestDto {
 
     private MultipartFile image;
 
+    private List<MultipartFile> images;
 
 }

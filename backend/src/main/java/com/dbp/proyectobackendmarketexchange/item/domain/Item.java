@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -57,6 +58,15 @@ public class Item {
 
     private LocalDateTime updatedAt;
 
+    @Size(max = 500, message = "El motivo de rechazo no puede tener mas de 500 caracteres")
+    private String rejectionReason;
+
+    private LocalDateTime moderatedAt;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "moderated_by_id")
+    private Usuario moderatedBy;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -71,5 +81,8 @@ public class Item {
 
     @Enumerated(EnumType.STRING)
     private StorageProvider imageProvider;
+
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItemImage> images;
 
 }

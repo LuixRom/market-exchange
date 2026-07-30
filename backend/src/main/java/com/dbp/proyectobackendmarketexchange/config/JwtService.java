@@ -49,12 +49,16 @@ public class JwtService {
 
         JWT.require(Algorithm.HMAC256(secret)).build().verify(token);
 
-        UserDetails userDetails = userService.userDetailsService().loadUserByUsername(userEmail);
-
         SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(new UsernamePasswordAuthenticationToken(
-                userDetails, token, userDetails.getAuthorities()));
+        context.setAuthentication(authenticationFromToken(token, userEmail));
         SecurityContextHolder.setContext(context);
     }
-}
 
+    public UsernamePasswordAuthenticationToken authenticationFromToken(String token, String userEmail) throws AuthenticationException {
+        JWT.require(Algorithm.HMAC256(secret)).build().verify(token);
+
+        UserDetails userDetails = userService.userDetailsService().loadUserByUsername(userEmail);
+
+        return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
+    }
+}

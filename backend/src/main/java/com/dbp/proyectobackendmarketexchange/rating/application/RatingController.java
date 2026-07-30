@@ -29,6 +29,12 @@ public class RatingController {
         return new ResponseEntity<>(nuevoRating, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<RatingResponseDto> actualizarRating(@PathVariable("id") Long ratingId,
+                                                              @Valid @RequestBody RatingRequestDto requestDTO) {
+        return ResponseEntity.ok(ratingService.actualizarRating(ratingId, requestDTO));
+    }
+
     // Endpoint para listar todas las calificaciones
     @GetMapping("/listar")
     public ResponseEntity<List<RatingResponseDto>> listarRatings() {

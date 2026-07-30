@@ -36,6 +36,10 @@ public class Shipment {
     @Enumerated(EnumType.STRING)
     private ShipmentStatus status = ShipmentStatus.PENDING;
 
+    @NotNull(message = "El metodo de entrega no puede ser nulo")
+    @Enumerated(EnumType.STRING)
+    private ShipmentMethod method = ShipmentMethod.EXTERNAL_SHIPPING;
+
     private String trackingCode;
 
     @NotNull
@@ -46,6 +50,8 @@ public class Shipment {
     private LocalDateTime shippedAt;
     private LocalDateTime deliveredAt;
     private LocalDateTime cancelledAt;
+    private LocalDateTime proposerDeliveryConfirmedAt;
+    private LocalDateTime receiverDeliveryConfirmedAt;
 
     @PrePersist
     protected void onCreate() {

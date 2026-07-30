@@ -1,10 +1,12 @@
 package com.dbp.proyectobackendmarketexchange.auth;
 
 import com.dbp.proyectobackendmarketexchange.auth.domain.AuthenticationService;
+import com.dbp.proyectobackendmarketexchange.auth.domain.AccountToken;
 import com.dbp.proyectobackendmarketexchange.auth.dto.JwtAuthResponse;
 import com.dbp.proyectobackendmarketexchange.auth.dto.LoginRequest;
 import com.dbp.proyectobackendmarketexchange.auth.dto.RegisterRequest;
 import com.dbp.proyectobackendmarketexchange.auth.exception.UserAlreadyExistException;
+import com.dbp.proyectobackendmarketexchange.auth.infrastructure.AccountTokenRepository;
 import com.dbp.proyectobackendmarketexchange.config.JwtService;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.Usuario;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.UsuarioService;
@@ -30,6 +32,9 @@ class AuthServiceTest {
     private UsuarioRepository userRepository;
 
     @Mock
+    private AccountTokenRepository accountTokenRepository;
+
+    @Mock
     private JwtService jwtService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -40,12 +45,22 @@ class AuthServiceTest {
     @Mock
     private UsuarioService usuarioService;
 
-    @InjectMocks
     private AuthenticationService authenticationService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        authenticationService = new AuthenticationService(
+                userRepository,
+                accountTokenRepository,
+                jwtService,
+                passwordEncoder,
+                eventPublisher,
+                24,
+                30,
+                14
+        );
+        when(accountTokenRepository.save(any(AccountToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -54,6 +69,7 @@ class AuthServiceTest {
         Usuario user = new Usuario();
         user.setEmail("user@example.com");
         user.setPassword("encodedPassword");
+        user.setEmailVerified(true);
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("user@example.com");
@@ -95,6 +111,7 @@ class AuthServiceTest {
         Usuario user = new Usuario();
         user.setEmail("user@example.com");
         user.setPassword("encodedPassword");
+        user.setEmailVerified(true);
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("user@example.com");
@@ -121,18 +138,19 @@ class AuthServiceTest {
         registerRequest.setPhone("987654321");
         registerRequest.setAddress("San Junipero");
 
-        when(userRepository.findByEmail(registerRequest.getEmail())).thenReturn(Optional.empty());
+        when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(registerRequest.getPassword())).thenReturn("encodedPassword");
-        when(jwtService.generateToken(any(Usuario.class))).thenReturn("fake-jwt-token");
 
         // Ejecutar el metodo
         JwtAuthResponse response = authenticationService.signup(registerRequest);
 
         // Verificar el resultado
         assertNotNull(response);
-        assertEquals("fake-jwt-token", response.getToken());
+        assertNull(response.getToken());
+        assertFalse(response.isEmailVerified());
+        assertNotNull(response.getEmailVerificationToken());
         verify(userRepository, times(1)).save(any(Usuario.class));
-        verify(jwtService, times(1)).generateToken(any(Usuario.class));
+        verify(accountTokenRepository, times(1)).save(any(AccountToken.class));
         verify(eventPublisher, times(1)).publishEvent(any()); // Verifica que se publicaron eventos
     }
 
@@ -146,7 +164,7 @@ class AuthServiceTest {
         Usuario existingUser = new Usuario();
         existingUser.setEmail("existinguser@example.com");
 
-        when(userRepository.findByEmail(registerRequest.getEmail())).thenReturn(Optional.of(existingUser));
+        when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(true);
 
         // Verificar que se lanza la excepción de UserAlreadyExistException
         assertThrows(UserAlreadyExistException.class, () -> authenticationService.signup(registerRequest));

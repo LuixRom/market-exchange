@@ -10,6 +10,8 @@ import com.dbp.proyectobackendmarketexchange.exception.TradeProposalConflictExce
 import com.dbp.proyectobackendmarketexchange.item.domain.Item;
 import com.dbp.proyectobackendmarketexchange.item.domain.ItemStatus;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
+import com.dbp.proyectobackendmarketexchange.notification.domain.NotificationService;
+import com.dbp.proyectobackendmarketexchange.realtime.RealtimeMessagingService;
 import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentService;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposalService;
@@ -60,6 +62,12 @@ public class TradeProposalServiceTest {
 
     @Mock
     private AuthorizationUtils authorizationUtils;
+
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
+    private RealtimeMessagingService realtimeMessagingService;
 
     @InjectMocks
     private TradeProposalService tradeProposalService;

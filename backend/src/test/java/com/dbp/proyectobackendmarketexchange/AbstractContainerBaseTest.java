@@ -4,6 +4,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @DataJpaTest
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 public abstract class AbstractContainerBaseTest extends AbstractIntegrationTest {
 }

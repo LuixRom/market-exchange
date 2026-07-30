@@ -17,7 +17,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Implementación local del storage: encapsula exactamente lo que ItemService/ItemController
@@ -97,6 +99,23 @@ public class LocalStorageService implements StorageService {
             Files.deleteIfExists(resolve(storageKey));
         } catch (IOException e) {
             throw new StorageException("No se pudo eliminar el archivo", e);
+        }
+    }
+
+    @Override
+    public List<String> listKeys(String directory) {
+        StorageDirectories.validate(directory);
+        Path directoryPath = resolve(directory);
+        if (!Files.exists(directoryPath)) {
+            return List.of();
+        }
+        try (Stream<Path> paths = Files.walk(directoryPath)) {
+            return paths
+                    .filter(Files::isRegularFile)
+                    .map(path -> baseDirectory.relativize(path).toString().replace('\\', '/'))
+                    .toList();
+        } catch (IOException e) {
+            throw new StorageException("No se pudieron listar los archivos almacenados", e);
         }
     }
 

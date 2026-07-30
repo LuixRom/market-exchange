@@ -1,6 +1,7 @@
 package com.dbp.proyectobackendmarketexchange.shipment.dto;
 
 import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentStatus;
+import com.dbp.proyectobackendmarketexchange.shipment.domain.ShipmentMethod;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +17,7 @@ public class ShipmentResponseDto {
     private LocalDateTime deliveryDate;
     private Long tradeProposalId;
     private ShipmentStatus status;
+    private ShipmentMethod method;
     private String trackingCode;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -23,4 +25,7 @@ public class ShipmentResponseDto {
     private LocalDateTime shippedAt;
     private LocalDateTime deliveredAt;
     private LocalDateTime cancelledAt;
+    private LocalDateTime proposerDeliveryConfirmedAt;
+    private LocalDateTime receiverDeliveryConfirmedAt;
+    private boolean deliveryConfirmedByBoth;
 }

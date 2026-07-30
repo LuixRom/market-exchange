@@ -3,6 +3,7 @@ package com.dbp.proyectobackendmarketexchange;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Bootstrap de Testcontainers sin @DataJpaTest, para usar con @SpringBootTest cuando
@@ -11,16 +12,16 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * AbstractContainerBaseTest no permite por estar anotada @DataJpaTest en la clase
  * abstracta misma.
  */
+@Testcontainers(disabledWithoutDocker = true)
 public abstract class AbstractIntegrationTest {
 
     protected static final PostgreSQLContainer<?> postgresqlContainer;
 
     static {
-        postgresqlContainer = new PostgreSQLContainer<>("postgres:latest")
+        postgresqlContainer = new PostgreSQLContainer<>("postgres:16-alpine")
                 .withDatabaseName("e2eTestDb")
                 .withUsername("e2e")
                 .withPassword("e2e");
-
         postgresqlContainer.start();
     }
 

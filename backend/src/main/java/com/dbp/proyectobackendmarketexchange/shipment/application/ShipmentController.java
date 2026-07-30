@@ -54,6 +54,11 @@ public class ShipmentController {
         return shipmentService.deliverShipment(id);
     }
 
+    @PutMapping("/{id}/confirm-delivery")
+    public ShipmentResponseDto confirmDelivery(@PathVariable Long id) {
+        return shipmentService.confirmDelivery(id);
+    }
+
     @PutMapping("/{id}/cancel")
     public ShipmentResponseDto cancelShipment(@PathVariable Long id) {
         return shipmentService.cancelShipment(id);

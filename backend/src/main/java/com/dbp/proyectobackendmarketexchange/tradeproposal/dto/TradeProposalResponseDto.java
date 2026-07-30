@@ -4,6 +4,8 @@ import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeStatus;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class TradeProposalResponseDto {
@@ -21,4 +23,9 @@ public class TradeProposalResponseDto {
 
     private Long receiverId;
     private String receiverEmail;
+
+    private String initialMessage;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime cancelledAt;
 }

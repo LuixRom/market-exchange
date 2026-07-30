@@ -63,6 +63,33 @@ public class Usuario implements UserDetails {
 
     private LocalDateTime updatedAt;
 
+    private boolean emailVerified = false;
+
+    private LocalDateTime emailVerifiedAt;
+
+    @Size(max = 255, message = "La bio no puede tener mas de 255 caracteres")
+    private String bio;
+
+    @Size(max = 255, message = "La URL del avatar no puede tener mas de 255 caracteres")
+    private String avatarUrl;
+
+    @Size(max = 100, message = "La ubicacion no puede tener mas de 100 caracteres")
+    private String location;
+
+    private boolean blocked = false;
+
+    private LocalDateTime blockedAt;
+
+    @Size(max = 500, message = "El motivo de bloqueo no puede tener mas de 500 caracteres")
+    private String blockedReason;
+
+    private boolean suspended = false;
+
+    private LocalDateTime suspendedAt;
+
+    @Size(max = 500, message = "El motivo de suspension no puede tener mas de 500 caracteres")
+    private String suspensionReason;
+
     @OneToMany(mappedBy = "reviewedUser", cascade = CascadeType.ALL)
     private List<Rating> ratingsReceived;
 
@@ -89,6 +116,11 @@ public class Usuario implements UserDetails {
     @Override
     public String getUsername() {
         return this.email;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.emailVerified && !this.blocked && !this.suspended;
     }
 
     @PrePersist

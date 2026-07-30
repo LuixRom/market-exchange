@@ -1,8 +1,11 @@
 package com.dbp.proyectobackendmarketexchange.usuario.application;
 
 import com.dbp.proyectobackendmarketexchange.usuario.domain.UsuarioService;
+import com.dbp.proyectobackendmarketexchange.usuario.dto.AdminUserStatusRequest;
+import com.dbp.proyectobackendmarketexchange.usuario.dto.ProfileUpdateRequest;
 import com.dbp.proyectobackendmarketexchange.usuario.dto.UsuarioRequestDto;
 import com.dbp.proyectobackendmarketexchange.usuario.dto.UsuarioResponseDto;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,5 +52,34 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponseDto> getMyInfo() {
         UsuarioResponseDto usuarioInfo = usuarioService.getUsuarioOwnInfo();
         return ResponseEntity.ok(usuarioInfo);
+    }
+
+    @PutMapping("/me/profile")
+    public ResponseEntity<UsuarioResponseDto> updateMyProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+        return ResponseEntity.ok(usuarioService.updateMyProfile(request));
+    }
+
+    @PutMapping("/{id}/suspend")
+    public ResponseEntity<UsuarioResponseDto> suspendUser(@PathVariable Long id,
+                                                          @Valid @RequestBody(required = false) AdminUserStatusRequest request) {
+        String reason = request == null ? null : request.getReason();
+        return ResponseEntity.ok(usuarioService.suspendUser(id, reason));
+    }
+
+    @PutMapping("/{id}/unsuspend")
+    public ResponseEntity<UsuarioResponseDto> unsuspendUser(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.unsuspendUser(id));
+    }
+
+    @PutMapping("/{id}/block")
+    public ResponseEntity<UsuarioResponseDto> blockUser(@PathVariable Long id,
+                                                        @Valid @RequestBody(required = false) AdminUserStatusRequest request) {
+        String reason = request == null ? null : request.getReason();
+        return ResponseEntity.ok(usuarioService.blockUser(id, reason));
+    }
+
+    @PutMapping("/{id}/unblock")
+    public ResponseEntity<UsuarioResponseDto> unblockUser(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.unblockUser(id));
     }
 }

@@ -6,10 +6,14 @@ import com.dbp.proyectobackendmarketexchange.category.infrastructure.CategoryRep
 import com.dbp.proyectobackendmarketexchange.event.item.ItemCreatedEvent;
 import com.dbp.proyectobackendmarketexchange.exception.ForbiddenOperationException;
 import com.dbp.proyectobackendmarketexchange.item.domain.Item;
+import com.dbp.proyectobackendmarketexchange.item.domain.ItemImage;
 import com.dbp.proyectobackendmarketexchange.item.domain.ItemService;
 import com.dbp.proyectobackendmarketexchange.item.domain.ItemStatus;
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemRequestDto;
 import com.dbp.proyectobackendmarketexchange.item.dto.ItemResponseDto;
+import com.dbp.proyectobackendmarketexchange.item.infrastructure.FavoriteItemRepository;
+import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemImageRepository;
+import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemModerationHistoryRepository;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageObject;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
@@ -48,6 +52,15 @@ public class ItemServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
+    private FavoriteItemRepository favoriteItemRepository;
+
+    @Mock
+    private ItemImageRepository itemImageRepository;
+
+    @Mock
+    private ItemModerationHistoryRepository itemModerationHistoryRepository;
+
+    @Mock
     private AuthorizationUtils authorizationUtils;
 
     @Mock
@@ -65,6 +78,7 @@ public class ItemServiceTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(anyLong())).thenReturn(List.of());
     }
 
     @AfterEach
@@ -137,11 +151,18 @@ public class ItemServiceTest {
         when(itemRepository.save(any(Item.class))).thenReturn(savedItem);
         when(storageServiceRegistry.getDefault()).thenReturn(storageService);
         when(storageService.store(eq(image), anyString())).thenReturn(storageObject);
+        when(itemImageRepository.save(any(ItemImage.class))).thenAnswer(invocation -> {
+            ItemImage itemImage = invocation.getArgument(0);
+            itemImage.setId(99L);
+            return itemImage;
+        });
+        when(itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(1L))
+                .thenReturn(List.of(buildItemImage(savedItem, "items/abc.jpg")));
 
         ItemResponseDto result = itemService.createItem(requestDto);
 
         assertNotNull(result);
-        assertEquals("/item/1/image", result.getImageUrl());
+        assertEquals("/item/1/images/77", result.getImageUrl());
         assertEquals("items/abc.jpg", savedItem.getImageKey());
         assertEquals(StorageProvider.LOCAL, savedItem.getImageProvider());
         verify(itemRepository, times(2)).save(any(Item.class)); // una vez para obtener el id, otra con la key
@@ -216,6 +237,7 @@ public class ItemServiceTest {
         item.setId(1L);
         item.setUsuario(usuario);
         item.setCategory(category);
+        item.setStatus(ItemStatus.APPROVED);
 
         // Simulación de comportamiento
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
@@ -246,11 +268,12 @@ public class ItemServiceTest {
         item.setId(1L);
         item.setCategory(category);
         item.setUsuario(usuario);
+        item.setStatus(ItemStatus.APPROVED);
 
         List<Item> items = List.of(item);
 
         // Simulación de comportamiento
-        when(itemRepository.findAll()).thenReturn(items);
+        when(itemRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class))).thenReturn(items);
 
         // Ejecución del metodo
         List<ItemResponseDto> result = itemService.getAllItems();
@@ -299,6 +322,16 @@ public class ItemServiceTest {
         return item;
     }
 
+    private ItemImage buildItemImage(Item item, String storageKey) {
+        ItemImage image = new ItemImage();
+        image.setId(77L);
+        image.setItem(item);
+        image.setStorageKey(storageKey);
+        image.setStorageProvider(StorageProvider.LOCAL);
+        image.setPrimaryImage(true);
+        return image;
+    }
+
     @Test
     public void testReplaceItemImage_Success_StoresNewThenDeletesOld() {
         Usuario owner = new Usuario();
@@ -309,8 +342,12 @@ public class ItemServiceTest {
 
         when(itemRepository.findById(10L)).thenReturn(Optional.of(item));
         when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+        when(itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(10L))
+                .thenReturn(List.of(buildItemImage(item, "items/old.jpg")));
         when(storageServiceRegistry.getDefault()).thenReturn(storageService);
+        when(storageServiceRegistry.forProvider(StorageProvider.LOCAL)).thenReturn(storageService);
         when(storageService.store(eq(newImage), anyString())).thenReturn(newObject);
+        when(itemImageRepository.save(any(ItemImage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(itemRepository.save(item)).thenReturn(item);
 
         ItemResponseDto result = itemService.replaceItemImage(10L, newImage);
@@ -336,6 +373,7 @@ public class ItemServiceTest {
         when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
         when(storageServiceRegistry.getDefault()).thenReturn(storageService);
         when(storageService.store(eq(newImage), anyString())).thenReturn(newObject);
+        when(itemImageRepository.save(any(ItemImage.class))).thenThrow(new RuntimeException("DB caida"));
         when(itemRepository.save(item)).thenThrow(new RuntimeException("DB caída"));
 
         assertThrows(RuntimeException.class, () -> itemService.replaceItemImage(10L, newImage));
@@ -373,8 +411,12 @@ public class ItemServiceTest {
 
         when(itemRepository.findById(10L)).thenReturn(Optional.of(item));
         when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
+        when(itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(10L))
+                .thenReturn(List.of(buildItemImage(item, "items/old.jpg")));
         when(storageServiceRegistry.getDefault()).thenReturn(storageService);
+        when(storageServiceRegistry.forProvider(StorageProvider.LOCAL)).thenReturn(storageService);
         when(storageService.store(eq(newImage), anyString())).thenReturn(newObject);
+        when(itemImageRepository.save(any(ItemImage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(itemRepository.save(item)).thenReturn(item);
         doThrow(new RuntimeException("no se pudo borrar")).when(storageService).delete("items/old.jpg");
 

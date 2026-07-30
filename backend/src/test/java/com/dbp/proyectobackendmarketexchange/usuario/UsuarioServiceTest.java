@@ -57,6 +57,11 @@ public class UsuarioServiceTest {
         // Preparar datos
         UsuarioRequestDto requestDto = new UsuarioRequestDto();
         requestDto.setFirstname("Carlos");
+        requestDto.setLastname("Lopez");
+        requestDto.setEmail("carlos@example.com");
+        requestDto.setPhone("987654321");
+        requestDto.setAddress("Nueva direccion");
+        requestDto.setPassword("Password123");
         requestDto.setLastname("Villegas");
         requestDto.setEmail("carlos@example.com");
         requestDto.setPhone("123456789");
@@ -147,6 +152,11 @@ public class UsuarioServiceTest {
         // Preparar datos
         UsuarioRequestDto requestDto = new UsuarioRequestDto();
         requestDto.setFirstname("Carlos");
+        requestDto.setLastname("Lopez");
+        requestDto.setEmail("carlos.update@example.com");
+        requestDto.setPhone("987654321");
+        requestDto.setAddress("Nueva direccion");
+        requestDto.setPassword("Password123");
 
         Usuario usuarioExistente = new Usuario();
         usuarioExistente.setId(1L);

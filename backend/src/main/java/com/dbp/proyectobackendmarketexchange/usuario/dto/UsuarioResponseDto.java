@@ -15,5 +15,16 @@ public class UsuarioResponseDto {
     private String email;
     private String address;
     private String phone;
+    private String role;
+    private boolean emailVerified;
+    private String bio;
+    private String avatarUrl;
+    private String location;
     private LocalDateTime createdAt;
+    private boolean blocked;
+    private LocalDateTime blockedAt;
+    private String blockedReason;
+    private boolean suspended;
+    private LocalDateTime suspendedAt;
+    private String suspensionReason;
 }

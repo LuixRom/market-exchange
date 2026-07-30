@@ -78,7 +78,7 @@ public class ItemControllerTest {
         responseDto.setId(1L);
 
         // Simular comportamiento del servicio
-        when(itemService.approveItem(1L, true)).thenReturn(responseDto);
+        when(itemService.approveItem(1L, true, null)).thenReturn(responseDto);
 
         // Realizar la solicitud POST y verificar la respuesta
         mockMvc.perform(post("/item/1/approve")
@@ -87,7 +87,7 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.id").value(1L));
 
         // Verificar que el servicio fue llamado
-        verify(itemService, times(1)).approveItem(1L, true);
+        verify(itemService, times(1)).approveItem(1L, true, null);
     }
 
     @Test

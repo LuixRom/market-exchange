@@ -2,6 +2,8 @@ package com.dbp.proyectobackendmarketexchange.storage.domain;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 /**
  * Abstracción de almacenamiento de archivos, no acoplada a Item: cualquier dominio que
  * necesite guardar/leer/borrar un archivo puede reusar esta interfaz.
@@ -34,6 +36,10 @@ public interface StorageService {
      * Idempotente: borrar una key que no existe no lanza excepción.
      */
     void delete(String storageKey);
+
+    default List<String> listKeys(String directory) {
+        return List.of();
+    }
 
     /**
      * URL pública (si el proveedor la tiene). Hoy no la usa el controller de Item -que

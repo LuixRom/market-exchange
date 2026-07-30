@@ -52,8 +52,12 @@ public class AuthControllerTest {
     public void testRegisterSuccess() throws Exception {
         // Preparar datos
         RegisterRequest registerRequest = new RegisterRequest();
+        registerRequest.setFirstName("Test");
+        registerRequest.setLastName("User");
         registerRequest.setEmail("user@example.com");
         registerRequest.setPassword("password123");
+        registerRequest.setPhone("987654321");
+        registerRequest.setAddress("Test Address");
 
         JwtAuthResponse jwtAuthResponse = new JwtAuthResponse();
         jwtAuthResponse.setToken("fake-jwt-token");

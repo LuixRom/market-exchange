@@ -13,9 +13,12 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 import org.springframework.context.event.EventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class ItemCreatedListener {
+    private static final Logger logger = LoggerFactory.getLogger(ItemCreatedListener.class);
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
@@ -45,7 +48,7 @@ public class ItemCreatedListener {
         // Enviar el correo al usuario que publicó el ítem
         enviarCorreo(emailUsuario, contenidoHtml);
 
-        System.out.println("Correo enviado a: " + emailUsuario + " por la creación del ítem.");
+        logger.info("Correo de item creado enviado a {}", emailUsuario);
     }
 
     private void enviarCorreo(String email, String contenidoHtml) throws MessagingException {

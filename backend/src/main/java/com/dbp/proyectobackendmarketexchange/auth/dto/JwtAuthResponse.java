@@ -4,5 +4,8 @@ import lombok.Data;
 
 @Data
 public class JwtAuthResponse {
-    String token;
+    private String token;
+    private String refreshToken;
+    private boolean emailVerified;
+    private String emailVerificationToken;
 }

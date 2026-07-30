@@ -5,6 +5,7 @@ import com.dbp.proyectobackendmarketexchange.auth.utils.AuthorizationUtils;
 import com.dbp.proyectobackendmarketexchange.exception.DuplicateRatingException;
 import com.dbp.proyectobackendmarketexchange.exception.ForbiddenOperationException;
 import com.dbp.proyectobackendmarketexchange.exception.RatingNotAllowedException;
+import com.dbp.proyectobackendmarketexchange.notification.domain.NotificationService;
 import com.dbp.proyectobackendmarketexchange.rating.domain.Rating;
 import com.dbp.proyectobackendmarketexchange.rating.domain.RatingService;
 import com.dbp.proyectobackendmarketexchange.rating.dto.RatingReputationDto;
@@ -46,6 +47,9 @@ public class RatingServiceTest {
     @Mock
     private AuthorizationUtils authorizationUtils;
 
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private RatingService ratingService;
 
@@ -74,6 +78,7 @@ public class RatingServiceTest {
         completedTrade.setProposer(proposer);
         completedTrade.setReceiver(receiver);
         completedTrade.setStatus(TradeStatus.COMPLETED);
+        completedTrade.setUpdatedAt(java.time.LocalDateTime.now());
     }
 
     @AfterEach

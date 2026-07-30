@@ -55,6 +55,11 @@ public class TradeProposal {
 
     private LocalDateTime updatedAt;
 
+    @Column(length = 500)
+    private String initialMessage;
+
+    private LocalDateTime cancelledAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

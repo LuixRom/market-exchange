@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,8 +28,20 @@ public class ItemResponseDto {
     private ItemStatus status;
 
     private String imageUrl;
+    private List<String> imageUrls;
 
     private Long user_id;
 
+    private Long category_id;
+
+    private boolean favorite;
+
+    private String rejectionReason;
+
+    private Long moderatedById;
+
+    private String moderatedByEmail;
+
+    private LocalDateTime moderatedAt;
 
 }

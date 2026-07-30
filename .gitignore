@@ -21,6 +21,8 @@ backend/target/
 
 application-local.properties
 application-prod.properties
+!backend/src/main/resources/application-local.properties
+!backend/src/main/resources/application-prod.properties
 
 # =========================
 # Archivos subidos

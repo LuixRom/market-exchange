@@ -1,6 +1,7 @@
 package com.dbp.proyectobackendmarketexchange.usuario.domain;
 
 import com.dbp.proyectobackendmarketexchange.usuario.infrastructure.UsuarioRepository;
+import com.dbp.proyectobackendmarketexchange.auth.utils.EmailNormalizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,7 +20,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public Usuario loadUserByUsername(String username) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository
-                .findByEmail(username)
+                .findByEmail(EmailNormalizer.normalize(username))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con el email: " + username));
 
         return usuario;  // Asegúrate de que Usuario implemente UserDetails
@@ -30,7 +31,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetailsService userDetailsService() {
         return username -> {
             Usuario user = usuarioRepository
-                    .findByEmail(username)
+                    .findByEmail(EmailNormalizer.normalize(username))
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
             return (UserDetails) user;
         };

@@ -8,6 +8,7 @@ import com.dbp.proyectobackendmarketexchange.item.domain.Condition;
 import com.dbp.proyectobackendmarketexchange.item.domain.Item;
 import com.dbp.proyectobackendmarketexchange.item.domain.ItemStatus;
 import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
+import com.dbp.proyectobackendmarketexchange.notification.infrastructure.NotificationRepository;
 import com.dbp.proyectobackendmarketexchange.shipment.infrastructure.ShipmentRepository;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposal;
 import com.dbp.proyectobackendmarketexchange.tradeproposal.domain.TradeProposalService;
@@ -45,7 +46,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * falta el contexto completo con los @Service reales, y cada hilo necesita su propia
  * transacción confirmada para que el bloqueo pesimista tenga sentido.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        properties = "app.seed.enabled=false"
+)
 class TradeProposalConcurrencyTest extends AbstractIntegrationTest {
 
     @Autowired
@@ -65,6 +69,9 @@ class TradeProposalConcurrencyTest extends AbstractIntegrationTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     @Test
     void twoCompetingAccepts_exactlyOneWinsAndTheOtherIsCancelled() throws Exception {
@@ -90,6 +97,12 @@ class TradeProposalConcurrencyTest extends AbstractIntegrationTest {
         try {
             runConcurrentAccepts(proposalA, proposalB, receiver, offeredItemA, offeredItemB, requestedItem);
         } finally {
+            notificationRepository.findAll().stream()
+                    .filter(n -> n.getRecipient() != null
+                            && (n.getRecipient().getId().equals(proposerA.getId())
+                                || n.getRecipient().getId().equals(proposerB.getId())
+                                || n.getRecipient().getId().equals(receiver.getId())))
+                    .forEach(n -> notificationRepository.deleteById(n.getId()));
             shipmentRepository.findAll().stream()
                     .filter(s -> s.getTradeProposal() != null
                             && (s.getTradeProposal().getId().equals(proposalA.getId())

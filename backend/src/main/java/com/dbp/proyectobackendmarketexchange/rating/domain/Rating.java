@@ -38,18 +38,37 @@ public class Rating {
     @NotNull(message = "El usuario calificado no puede ser nulo")
     private Usuario reviewedUser;
 
-    @Min(value = 1, message = "La calificación debe ser al menos 1")
-    @Max(value = 5, message = "La calificación no puede ser mayor que 5")
+    @Min(value = 1, message = "La calificacion debe estar entre 1 y 5")
+    @Max(value = 5, message = "La calificacion debe estar entre 1 y 5")
     private int score;
 
-    @Size(max = 500, message = "El comentario no puede tener más de 500 caracteres")
+    @Min(value = 1, message = "La comunicacion debe estar entre 1 y 5")
+    @Max(value = 5, message = "La comunicacion debe estar entre 1 y 5")
+    private Integer communicationScore;
+
+    @Min(value = 1, message = "La puntualidad debe estar entre 1 y 5")
+    @Max(value = 5, message = "La puntualidad debe estar entre 1 y 5")
+    private Integer punctualityScore;
+
+    @Min(value = 1, message = "El estado del producto debe estar entre 1 y 5")
+    @Max(value = 5, message = "El estado del producto debe estar entre 1 y 5")
+    private Integer itemConditionScore;
+
+    @Size(max = 500, message = "El comentario no puede tener mas de 500 caracteres")
     private String comment;
 
     @NotNull
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

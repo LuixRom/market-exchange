@@ -53,15 +53,28 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         // Rutas públicas
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/**").hasAuthority("ADMIN")
 
 
                         // Acceso de USER a sus propios ítems
                         .requestMatchers(HttpMethod.POST, "/item").hasAuthority("USER")
-                        .requestMatchers(HttpMethod.PUT, "/item/**").hasAuthority("USER")
-                        .requestMatchers(HttpMethod.DELETE, "/item/**").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.DELETE, "/item/images/orphans").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/item/{itemId}/images").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/item/{itemId}/images/{imageId}").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/item/{itemId}/images").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/item/{itemId}/images/{imageId}").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/item/{itemId}/images/{imageId}/primary").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/item/**").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/item/**").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/item/category/{categoryId}").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/item/user/{userId}").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/item/mine").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.GET, "/item/catalog").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/item/favorites").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.POST, "/item/{itemId}/favorite").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.DELETE, "/item/{itemId}/favorite").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/item/{id}").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/item").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/item/{id}/image").hasAnyAuthority("USER", "ADMIN")
@@ -69,6 +82,7 @@ public class SecurityConfig {
 
                         // Acceso de ADMIN a sus propios ítems
                         .requestMatchers(HttpMethod.POST, "/item/{itemId}/approve").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/item/{itemId}/moderation-history").hasAuthority("ADMIN")
 
 
                         // Acceso de USER a categorías
@@ -81,6 +95,7 @@ public class SecurityConfig {
 
                         // Acceso de USER a ratings
                         .requestMatchers(HttpMethod.POST, "/ratings/crear").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.PUT, "/ratings/{id}").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/ratings/usuario/{usuarioId}/reputation").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/ratings/usuario/{usuarioId}").hasAuthority("USER")
                         // Acceso de ADMIN a ratings
@@ -92,8 +107,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/agreements").hasAuthority("USER")
                         .requestMatchers(HttpMethod.GET, "/agreements/{id}").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/agreements").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/agreements/sent").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.GET, "/agreements/received").hasAuthority("USER")
                         .requestMatchers(HttpMethod.PUT, "/agreements/{id}/accept").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/agreements/{id}/reject").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/agreements/{id}/cancel").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/agreements/{tradeProposalId}/messages").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.POST, "/agreements/{tradeProposalId}/messages").hasAuthority("USER")
                         // Acceso de ADMIN a agreements
 
                         .requestMatchers(HttpMethod.DELETE, "/agreements/{id}").hasAuthority("ADMIN")
@@ -106,12 +126,21 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/shipments/{id}/prepare").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/shipments/{id}/ship").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/shipments/{id}/deliver").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/shipments/{id}/confirm-delivery").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/shipments/{id}/cancel").hasAnyAuthority("USER", "ADMIN")
 
                         // Acceso de USER a sus propios datos de usuario
                         .requestMatchers(HttpMethod.GET, "/usuarios/me").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/me/profile").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/{id}/suspend").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/{id}/unsuspend").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/{id}/block").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/{id}/unblock").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/usuarios/{id}").hasAuthority("USER")
                         .requestMatchers(HttpMethod.DELETE, "/usuarios/{id}").hasAuthority("USER")
+                        .requestMatchers("/notifications/**").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.POST, "/reports").hasAuthority("USER")
+                        .requestMatchers("/admin/reports/**").hasAuthority("ADMIN")
                         // Acceso de ADMIN a sus propios datos de usuario
                         .requestMatchers(HttpMethod.GET, "/usuarios/listar").hasAuthority("ADMIN")
 
