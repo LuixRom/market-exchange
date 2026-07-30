@@ -7,12 +7,127 @@ Esta guia resume como levantar el backend localmente, que variables configurar y
 - Backend API: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Health check: `http://localhost:8080/actuator/health`
+- Liveness check: `http://localhost:8080/actuator/health/liveness`
+- Readiness check: `http://localhost:8080/actuator/health/readiness`
 - WebSocket STOMP: `http://localhost:8080/ws`
 - Frontend esperado para CORS: `http://localhost:5173`
 
+## Levantar Rapido Para Probar Frontend
+
+Este es el camino recomendado si el frontend quiere probar contra el backend local usando la base y storage de Supabase.
+
+### 1. Requisitos
+
+- Java 17.
+- Maven wrapper incluido en el proyecto (`mvnw.cmd`).
+- Una terminal PowerShell ubicada en `backend`.
+- Credenciales reales de Supabase para DB y Storage.
+
+Docker no es obligatorio si se usa Supabase como base de datos.
+
+### 2. Ir Al Backend
+
+```powershell
+cd C:\Users\Hanksvi\Desktop\MarketExchange\market-exchange\backend
+```
+
+### 3. Configurar Java 17
+
+```powershell
+$env:JAVA_HOME="C:\Program Files\Java\jdk-17"
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+java -version
+```
+
+Debe mostrar Java 17.
+
+### 4. Configurar Variables En PowerShell
+
+Estas variables viven solo en la terminal actual. Si se cierra la terminal, hay que volver a ponerlas.
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="dev"
+
+$env:DB_URL="jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
+$env:DB_USERNAME="postgres.tuvdcedzcvbcuczcctzk"
+$env:DB_PASSWORD="TU_PASSWORD_REAL_DE_SUPABASE"
+
+$env:JWT_SECRET="UNA_CLAVE_LARGA_LOCAL_DE_AL_MENOS_32_CARACTERES"
+
+$env:STORAGE_PROVIDER="supabase"
+$env:SUPABASE_URL="https://TU_PROJECT_REF.supabase.co"
+$env:SUPABASE_SECRET_KEY="TU_SERVICE_ROLE_KEY"
+$env:SUPABASE_STORAGE_BUCKET="market-exchange-items"
+
+$env:FRONTEND_BASE_URL="http://localhost:5173"
+$env:CORS_ALLOWED_ORIGINS="http://localhost:5173"
+
+$env:SEED_ENABLED="false"
+$env:MANAGEMENT_HEALTH_MAIL_ENABLED="false"
+```
+
+Notas:
+
+- `DB_PASSWORD` es la password de la base de datos de Supabase, no la publishable key.
+- `SUPABASE_SECRET_KEY` debe ser la service role key y no debe subirse al repo.
+- `MANAGEMENT_HEALTH_MAIL_ENABLED=false` evita que `/actuator/health` falle en local por no tener SMTP configurado.
+
+### 5. Levantar Backend
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+El backend queda disponible en:
+
+```txt
+http://localhost:8080
+```
+
+### 6. Verificar Que Esta Arriba
+
+En otra PowerShell:
+
+```powershell
+curl http://localhost:8080/actuator/health/liveness -UseBasicParsing
+curl http://localhost:8080/actuator/health/readiness -UseBasicParsing
+```
+
+Si `liveness` responde `UP`, la app esta viva. Si `readiness` responde `UP`, la app esta lista para recibir requests.
+
+Tambien se puede verificar en Supabase:
+
+```sql
+select * from flyway_schema_history order by installed_rank;
+```
+
+Si hay filas, el backend conecto y ejecuto migraciones.
+
+### 7. Probar Desde Frontend
+
+El frontend debe apuntar a:
+
+```env
+VITE_API_URL=http://localhost:8080
+```
+
+Despues de hacer login, enviar el token asi:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
 ## Formas De Levantar El Backend
 
-### Opcion A: DB en Docker, backend en IntelliJ o terminal
+### Opcion A: DB Supabase, backend en IntelliJ o terminal
+
+Usar las variables de la seccion "Levantar Rapido Para Probar Frontend".
+
+En IntelliJ, crear una Run Configuration de Spring Boot y poner las variables en `Environment variables`.
+
+Importante: IntelliJ no lee automaticamente las variables que se pusieron en PowerShell.
+
+### Opcion B: DB en Docker, backend en IntelliJ o terminal
 
 ```powershell
 cd C:\Users\Hanksvi\Desktop\MarketExchange\market-exchange\backend
@@ -26,7 +141,7 @@ $env:Path="$env:JAVA_HOME\bin;$env:Path"
 
 En IntelliJ, crear una Run Configuration de Spring Boot y poner las variables del `.env` en `Environment variables`.
 
-### Opcion B: Backend y DB en Docker Compose
+### Opcion C: Backend y DB en Docker Compose
 
 ```powershell
 cd C:\Users\Hanksvi\Desktop\MarketExchange\market-exchange\backend
@@ -41,21 +156,43 @@ Importante: fuera de Docker el backend usa `localhost:5555`; dentro de Docker Co
 
 Copiar `backend/.env.example` a `backend/.env`.
 
-Minimas para local:
+Minimas para Supabase:
+
+```env
+SPRING_PROFILES_ACTIVE=dev
+
+DB_URL=jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+DB_USERNAME=postgres.tuvdcedzcvbcuczcctzk
+DB_PASSWORD=
+
+JWT_SECRET=
+
+STORAGE_PROVIDER=supabase
+SUPABASE_URL=
+SUPABASE_SECRET_KEY=
+SUPABASE_STORAGE_BUCKET=market-exchange-items
+
+FRONTEND_BASE_URL=http://localhost:5173
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
+
+Minimas para DB local con Docker:
 
 ```env
 POSTGRES_DB=marketexchange
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<local-db-password>
+POSTGRES_PASSWORD=
 POSTGRES_PORT=5555
 BACKEND_PORT=8080
 
 SPRING_PROFILES_ACTIVE=local
 DB_URL=jdbc:postgresql://localhost:5555/marketexchange
 DB_USERNAME=postgres
-DB_PASSWORD=<local-db-password>
-JWT_SECRET=<long-random-local-secret>
+DB_PASSWORD=
+JWT_SECRET=
 ```
+
+No commitear `.env`. El repo solo debe tener `.env.example`.
 
 Variables importantes por bloque:
 
