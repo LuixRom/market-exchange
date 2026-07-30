@@ -1,28 +1,34 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { category } from "../services/category/category";
-import { usuario } from "../services/user/user"; // Importa el servicio de usuario
+import { usuario } from "../services/user/user";
 import { CategoryResponse } from "../interfaces/category/CategoryResponse";
 import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { item } from "../services/item/item";
 import { useNavigate } from "react-router-dom";
-import { Card } from "./ui/Card";
-import { Input } from "./ui/Input";
-import { Button } from "./ui/Button";
-import { slideUp } from "../lib/motion";
+import { slideUp, fadeIn } from "../lib/motion";
+import {
+  FaTag,
+  FaCommentAlt,
+  FaFolder,
+  FaShieldAlt,
+  FaImage,
+  FaCloudUploadAlt,
+  FaCheckCircle,
+  FaPaperPlane,
+  FaPlus,
+  FaCheck,
+} from "react-icons/fa";
 
 type ItemFormProps = {
-    initialData: {
-        name: string;
-        description: string;
-        condition: "NEW" | "USED";
-    };
-    onSubmitSuccess: (response: ItemResponse) => void;
-    onSubmitError: (error: unknown) => void;
+  initialData: {
+    name: string;
+    description: string;
+    condition: "NEW" | "USED";
+  };
+  onSubmitSuccess: (response: ItemResponse) => void;
+  onSubmitError: (error: unknown) => void;
 };
-
-const selectClassName =
-    "w-full rounded-card border border-border bg-surface px-4 py-2.5 text-gray-800 shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary";
 
 export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormProps) {
   const navigate = useNavigate();
@@ -33,12 +39,13 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
     condition: "NEW",
   });
 
-
-  const [image, setImage] = useState<File | null>(null); // Estado para la imagen
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [userId, setUserId] = useState<number | null>(null); // Estado para almacenar el ID del usuario
+  const [userId, setUserId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Cargar categorías al montar el componente
   useEffect(() => {
@@ -59,7 +66,7 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
     async function fetchUserId() {
       try {
         const userInfo = await usuario.getMyInfo();
-        setUserId(userInfo.id); // Establece el ID del usuario en el estado
+        setUserId(userInfo.id);
       } catch {
         setErrorMessage("Error al obtener información del usuario.");
       }
@@ -82,7 +89,16 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
 
   function handleImageChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] || null;
-    setImage(file); // Establecer la imagen seleccionada en el estado
+    setImage(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -101,148 +117,316 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
     }
 
     if (!image) {
-      setErrorMessage("Por favor selecciona una imagen.");
+      setErrorMessage("Por favor selecciona una imagen para tu ítem.");
       return;
     }
 
     try {
-      setErrorMessage(null);
-        const formDataToSend = new FormData();
-        formDataToSend.append("name", formData.name);
-        formDataToSend.append("description", formData.description);
-        formDataToSend.append("condition", formData.condition);
-        formDataToSend.append("category_id", selectedCategory.toString());
-        formDataToSend.append("user_id", userId.toString());
-        formDataToSend.append("image", image);
+      setLoading(true);
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("condition", formData.condition);
+      formDataToSend.append("category_id", selectedCategory.toString());
+      formDataToSend.append("user_id", userId.toString());
+      formDataToSend.append("image", image);
 
-        const response = await item.createItem(formDataToSend); // Cambiar a FormData
-        onSubmitSuccess(response);
+      const response = await item.createItem(formDataToSend);
+      onSubmitSuccess(response);
 
-      setErrorMessage(null);
-      setSuccessMessage("Ítem registrado exitosamente.");
+      setSuccessMessage("¡Ítem registrado exitosamente!");
       setTimeout(() => {
-        navigate("/");
-      }, 3000);
-
-
+        navigate("/dashboard");
+      }, 1500);
     } catch (error: unknown) {
-        if (error instanceof Error) {
-            setErrorMessage(`Error al registrar el ítem: ${error.message}`);
-        } else {
-            setErrorMessage("Error desconocido al registrar el ítem.");
-        }
-        onSubmitError(error);
+      if (error instanceof Error) {
+        setErrorMessage(`Error al registrar el ítem: ${error.message}`);
+      } else {
+        setErrorMessage("Error desconocido al registrar el ítem.");
+      }
+      onSubmitError(error);
+    } finally {
+      setLoading(false);
     }
   }
 
+  const handleCancel = () => {
+    navigate("/dashboard");
+  };
+
   return (
-    <section className="flex flex-col items-center justify-center min-h-screen bg-white-100 py-10">
+    <motion.div
+      className="w-full max-w-container mx-auto px-4 sm:px-6 py-8"
+      variants={fadeIn}
+      initial="hidden"
+      animate="visible"
+      transition={{ duration: 0.3 }}
+    >
+      {/* Encabezado Principal */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 shadow-xs">
+          <FaPlus size={18} />
+        </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+            Publicar nuevo ítem
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
+            Comparte un ítem con la comunidad y encuentra lo que necesitas intercambiando.
+          </p>
+        </div>
+      </div>
+
+      {/* Tarjeta Principal de Formulario */}
       <motion.div
-        className="w-full max-w-md px-4"
+        className="bg-white rounded-[32px] border border-gray-100 shadow-xl p-6 sm:p-8 md:p-10 grid lg:grid-cols-12 gap-8 lg:gap-10 relative overflow-hidden"
         variants={slideUp}
-        initial="hidden"
-        animate="visible"
-        transition={{ duration: 0.3 }}
       >
-        <Card className="p-8 border-0 shadow-lg">
-          <form onSubmit={handleSubmit}>
-            <h2 className="text-2xl font-bold mb-6 text-center">Registrar Ítem</h2>
+        {/* Columna Izquierda: Tarjeta Ilustrativa */}
+        <div className="lg:col-span-4 bg-[#faf6f0] border border-gray-200/70 rounded-3xl p-6 sm:p-8 flex flex-col justify-between items-center text-center relative overflow-hidden shadow-xs">
+          <div className="z-10">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-3">
+              Dale una nueva vida a lo que <span className="text-primary block">ya no usas</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600 max-w-xs leading-relaxed font-medium">
+              Publica tu ítem, intercambia y sé parte de un consumo más consciente.
+            </p>
+          </div>
 
-            <AnimatePresence>
-              {errorMessage && (
-                <motion.div
-                  className="text-danger text-sm mb-4 text-center"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {errorMessage}
-                </motion.div>
-              )}
-              {successMessage && (
-                <motion.div
-                  className="text-success text-sm mb-4 text-center"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {successMessage}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="mb-4">
-              <Input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Nombre del ítem"
-                required
+          {/* Ilustración central */}
+          <div className="relative flex justify-center items-center my-6 z-10 w-full">
+            <div className="w-48 h-48 sm:w-56 sm:h-56 bg-primary/15 rounded-full flex items-center justify-center shadow-inner">
+              <img
+                src="/img/caja2.png"
+                alt="Ilustración caja de intercambio"
+                className="w-40 sm:w-48 h-auto object-contain drop-shadow-md"
               />
             </div>
+          </div>
+        </div>
 
-            <div className="mb-4">
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className={selectClassName}
-                placeholder="Descripción del ítem"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <select
-                name="category"
-                value={selectedCategory || ""}
-                onChange={handleCategoryChange}
-                className={selectClassName}
-                required
+        {/* Columna Derecha: Campos del Formulario */}
+        <div className="lg:col-span-8">
+          <AnimatePresence>
+            {errorMessage && (
+              <motion.div
+                className="p-3.5 bg-danger/10 border border-danger/20 text-danger text-sm rounded-2xl font-semibold mb-6 text-center"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
               >
-                <option value="" disabled>
-                  Selecciona una categoría
-                </option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <select
-                name="condition"
-                value={formData.condition}
-                onChange={handleInputChange}
-                className={selectClassName}
-                required
+                {errorMessage}
+              </motion.div>
+            )}
+            {successMessage && (
+              <motion.div
+                className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-2xl font-semibold mb-6 text-center"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
               >
-                <option value="NEW">Nuevo</option>
-                <option value="USED">Usado</option>
-              </select>
+                {successMessage}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Nombre del ítem */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-6 shadow-xs">
+                <FaTag size={16} />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="name" className="block text-sm font-bold text-gray-800">
+                    Nombre del ítem <span className="text-danger">*</span>
+                  </label>
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    {formData.name.length}/80
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  maxLength={80}
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Silla de oficina ergonómica"
+                  required
+                  className="w-full px-4 py-3 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 shadow-xs"
+                />
+              </div>
             </div>
 
-            <div className="mb-4">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className={`${selectClassName} file:mr-3 file:rounded-full file:border-0 file:bg-primary file:text-primary-foreground file:px-3 file:py-1.5 file:text-sm file:font-semibold`}
-                required
-              />
+            {/* Descripción del ítem */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-6 shadow-xs">
+                <FaCommentAlt size={16} />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="description" className="block text-sm font-bold text-gray-800">
+                    Descripción del ítem <span className="text-danger">*</span>
+                  </label>
+                  <span className="text-[11px] text-gray-400 font-medium">
+                    {formData.description.length}/500
+                  </span>
+                </div>
+                <textarea
+                  id="description"
+                  name="description"
+                  maxLength={500}
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Describe tu ítem, su estado, características y cualquier detalle importante."
+                  rows={3}
+                  required
+                  className="w-full p-4 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 resize-none shadow-xs leading-relaxed"
+                />
+              </div>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" className="w-full">
-              Registrar Ítem
-            </Button>
+            {/* Categoría y Estado del ítem en 2 columnas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Categoría */}
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-6 shadow-xs">
+                  <FaFolder size={16} />
+                </div>
+                <div className="flex-1">
+                  <label htmlFor="category" className="block text-sm font-bold text-gray-800 mb-1.5">
+                    Categoría <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={selectedCategory || ""}
+                    onChange={handleCategoryChange}
+                    required
+                    className="w-full px-4 py-3 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 shadow-xs cursor-pointer"
+                  >
+                    <option value="" disabled>
+                      Selecciona una categoría
+                    </option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Estado del ítem (Condition) */}
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-6 shadow-xs">
+                  <FaShieldAlt size={16} />
+                </div>
+                <div className="flex-1">
+                  <label htmlFor="condition" className="block text-sm font-bold text-gray-800 mb-1.5">
+                    Estado del ítem <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    id="condition"
+                    name="condition"
+                    value={formData.condition}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 shadow-xs cursor-pointer"
+                  >
+                    <option value="NEW">Nuevo</option>
+                    <option value="USED">Usado</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Subir imágenes */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mt-6 shadow-xs">
+                <FaImage size={16} />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
+                  Subir imágenes <span className="text-danger">*</span>
+                </label>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                  {/* Dropzone de arrastrar/seleccionar archivo */}
+                  <div className="md:col-span-7 border-2 border-dashed border-primary/30 rounded-2xl p-5 text-center hover:bg-primary/5 transition-all relative flex flex-col items-center justify-center min-h-[140px] group cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      required={!image}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    />
+
+                    {imagePreview ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <img
+                          src={imagePreview}
+                          alt="Vista previa"
+                          className="w-20 h-20 object-cover rounded-xl border border-gray-200 shadow-xs"
+                        />
+                        <span className="text-xs font-bold text-primary flex items-center gap-1">
+                          <FaCheck size={12} /> {image?.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                          <FaCloudUploadAlt size={20} />
+                        </div>
+                        <p className="text-xs font-bold text-gray-800">
+                          Arrastra y suelta tus imágenes aquí
+                        </p>
+                        <p className="text-[11px] text-primary font-semibold mt-0.5">
+                          o haz clic para seleccionar
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-2">
+                          Formatos: JPG, PNG, WEBP. Máx 5MB por imagen.
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Cuadro de Consejo */}
+                  <div className="md:col-span-5 bg-primary/5 border border-primary/10 rounded-2xl p-4 text-xs text-gray-600 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 font-bold text-gray-900 text-sm mb-1.5">
+                      <FaCheckCircle className="text-primary" size={16} />
+                      <span>Consejo</span>
+                    </div>
+                    <p className="leading-relaxed text-[11px]">
+                      Las publicaciones con buenas imágenes reciben más intercambios. Te recomendamos subir fotos claras y bien iluminadas.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Acciones de enviar y cancelar */}
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-7 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition-all shadow-md hover:shadow-lg text-sm flex items-center gap-2 disabled:opacity-50"
+              >
+                <FaPaperPlane size={13} />
+                <span>{loading ? "Publicando..." : "Publicar ítem"}</span>
+              </button>
+            </div>
           </form>
-        </Card>
+        </div>
       </motion.div>
-    </section>
+    </motion.div>
   );
 }

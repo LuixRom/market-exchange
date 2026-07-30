@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthProvider"; // Importa useAuth para acceder al contexto
+import { useAuth } from "../context/AuthProvider";
 import { RegisterRequest } from "../interfaces/auth/RegisterRequest";
 import RegisterForm from "../components/RegisterForm";
+import AuthFooter from "../components/AuthFooter";
 import { register } from "../services/auth/register";
 
 export default function RegisterPage() {
@@ -17,7 +18,6 @@ export default function RegisterPage() {
         address: "",
     });
 
-    // Verifica si el usuario ya está autenticado y redirige al Dashboard
     useEffect(() => {
         if (auth.isAuthenticated) {
             navigate("/dashboard", { replace: true }); 
@@ -34,10 +34,15 @@ export default function RegisterPage() {
     }
 
     return (
-        <RegisterForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleRegisterSubmit}
-        />
+        <div className="bg-cream flex flex-col min-h-[calc(100vh-80px)] justify-between">
+            <div className="flex-grow">
+                <RegisterForm
+                    formData={formData}
+                    setFormData={setFormData}
+                    onSubmit={handleRegisterSubmit}
+                />
+            </div>
+            <AuthFooter />
+        </div>
     );
 }
