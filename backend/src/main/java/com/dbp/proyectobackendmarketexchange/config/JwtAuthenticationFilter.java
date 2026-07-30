@@ -1,5 +1,7 @@
 package com.dbp.proyectobackendmarketexchange.config;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,10 +34,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
-        userEmail = jwtService.extrackUserName(jwt);
 
-        if (StringUtils.hasText(userEmail) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            jwtService.validateToken(jwt, userEmail);
+        try {
+            userEmail = jwtService.extrackUserName(jwt);
+
+            if (StringUtils.hasText(userEmail) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                jwtService.validateToken(jwt, userEmail);
+            }
+        } catch (JWTVerificationException e) {
+            // Token ausente/vencido/con firma inválida (p.ej. sobrevivió a un cambio de
+            // JWT_SECRET, o el usuario dejó de existir): se trata como request anónima en
+            // vez de tirar abajo la respuesta con un 500. Las reglas de SecurityConfig son
+            // las que deciden si la ruta requiere autenticación o no.
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

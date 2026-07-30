@@ -29,7 +29,8 @@ public class Item {
     private String name;
 
     @NotBlank(message = "La descripción no puede estar vacía")
-    @Size(max = 255, message = "La descripción no puede tener más de 255 caracteres")
+    @Size(max = 500, message = "La descripción no puede tener más de 500 caracteres")
+    @Column(length = 500)
     private String description;
 
     @NotNull(message = "La categoría no puede ser nula")

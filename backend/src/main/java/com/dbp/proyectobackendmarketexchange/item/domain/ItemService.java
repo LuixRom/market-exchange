@@ -75,6 +75,7 @@ public class ItemService {
         this.storageServiceRegistry = storageServiceRegistry;
     }
 
+    @Transactional
     public ItemResponseDto createItem(ItemRequestDto itemDto) {
         Usuario user = resolveCurrentUser();
         assertActiveUser(user);
