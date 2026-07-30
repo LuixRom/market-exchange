@@ -1,75 +1,78 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import UserSettings from "../components/UserSettings"; // Renderiza la configuración del usuario
-import UserItems from "../components/UserItems"; // Renderiza los ítems publicados por el usuario
+import UserSettings from "../components/UserSettings";
+import UserItems from "../components/UserItems";
 import UserTrades from "../components/UserTrades";
 import UserTradesPending from "../components/UserTradesPending";
-import { Card } from "../components/ui/Card";
 import { fadeIn } from "../lib/motion";
+import { FaUser, FaBoxes, FaExchangeAlt, FaHistory } from "react-icons/fa";
 
 export default function CuentaPage() {
-    const [activeTab, setActiveTab] = useState<"info" | "items" | "tradeos" | "tradeosPending">("info"); // Estado para alternar entre pestañas
+    const [activeTab, setActiveTab] = useState<"info" | "items" | "tradeos" | "tradeosPending">("info");
 
-    const tabs: { key: typeof activeTab; label: string }[] = [
-        { key: "info", label: "Información del Usuario" },
-        { key: "items", label: "Mis Ítems Publicados" },
-        { key: "tradeos", label: "Tradeos" },
-        { key: "tradeosPending", label: "Tradeos por revisar" },
+    const tabs: { key: typeof activeTab; label: string; icon: React.ElementType }[] = [
+        { key: "info", label: "Información de la Cuenta", icon: FaUser },
+        { key: "items", label: "Mis Ítems Publicados", icon: FaBoxes },
+        { key: "tradeos", label: "Tradeos Realizados", icon: FaExchangeAlt },
+        { key: "tradeosPending", label: "Tradeos Por Revisar", icon: FaHistory },
     ];
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-muted py-10">
-            <Card className="w-full max-w-4xl p-6">
-                <h1 className="text-4xl font-bold text-center text-primary mb-6">Mi Cuenta</h1>
+        <motion.div
+            className="w-full max-w-container mx-auto px-4 sm:px-6 py-8"
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible"
+            transition={{ duration: 0.3 }}
+        >
+            {/* Encabezado de la página */}
+            <div className="mb-6">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                    Mi Cuenta
+                </h1>
+                <p className="mt-1 text-sm text-gray-600">
+                    Gestiona tu información personal y la configuración de tu cuenta.
+                </p>
+            </div>
 
-                <div className="flex">
-                    {/* Menú lateral */}
-                    <div className="w-1/4 pr-4 border-r border-border">
-                        <ul className="space-y-2">
-                            {tabs.map((tab) => (
-                                <li
-                                    key={tab.key}
-                                    className={`cursor-pointer p-2 rounded-card transition-colors ${
-                                        activeTab === tab.key
-                                            ? "bg-primary/10 text-primary font-bold"
-                                            : "text-gray-600 hover:bg-muted"
-                                    }`}
-                                    onClick={() => setActiveTab(tab.key)}
-                                >
-                                    {tab.label}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+            {/* Pestañas Horizontales Tipo Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none border-b border-gray-100">
+                {tabs.map((tab) => {
+                    const IconComp = tab.icon;
+                    const isActive = activeTab === tab.key;
+                    return (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+                                isActive
+                                    ? "bg-primary text-white shadow-md"
+                                    : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200/80"
+                            }`}
+                        >
+                            <IconComp size={14} />
+                            <span>{tab.label}</span>
+                        </button>
+                    );
+                })}
+            </div>
 
-                    {/* Contenido principal */}
-                    <div className="w-3/4 pl-4">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeTab}
-                                variants={fadeIn}
-                                initial="hidden"
-                                animate="visible"
-                                exit="hidden"
-                                transition={{ duration: 0.15 }}
-                            >
-                                {activeTab === "info" && (
-                                    <>
-                                        <h2 className="text-2xl font-bold text-gray-700 mb-4">Información del Usuario</h2>
-                                        <UserSettings /> {/* Componente para editar/eliminar la cuenta */}
-                                    </>
-                                )}
-
-                                {activeTab === "items" && <UserItems /> /* Componente para mostrar los ítems del usuario */}
-
-                                {activeTab === "tradeos" && <UserTrades /> /* Componente para mostrar los ítems del usuario */}
-
-                                {activeTab === "tradeosPending" && <UserTradesPending /> /* Componente para mostrar los ítems del usuario */}
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
-                </div>
-            </Card>
-        </div>
+            {/* Contenido Principal por Pestaña */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab}
+                    variants={fadeIn}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    transition={{ duration: 0.15 }}
+                >
+                    {activeTab === "info" && <UserSettings />}
+                    {activeTab === "items" && <UserItems />}
+                    {activeTab === "tradeos" && <UserTrades />}
+                    {activeTab === "tradeosPending" && <UserTradesPending />}
+                </motion.div>
+            </AnimatePresence>
+        </motion.div>
     );
 }

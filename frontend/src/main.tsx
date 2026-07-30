@@ -25,9 +25,18 @@ import AgreementByIdPage from './pages/AgreementByIdPage.tsx';
 //Vamos a crear un router y vamos a llamar a createBrowserRouter
 const MainLayout = () => (
   <>
+    {/* Primer elemento enfocable de toda la app — permite saltar el navbar con teclado */}
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-card"
+    >
+      Saltar al contenido
+    </a>
     <Navbar />
     <PageTransition>
-      <Outlet /> {/* Aquí se renderizarán las rutas hijas */}
+      <main id="main-content">
+        <Outlet /> {/* Aquí se renderizarán las rutas hijas */}
+      </main>
     </PageTransition>
   </>
 );

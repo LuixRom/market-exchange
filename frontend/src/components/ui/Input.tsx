@@ -12,7 +12,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            "w-full rounded-card border border-border bg-surface px-4 py-2.5 text-gray-800 shadow-sm transition-colors duration-200",
+            "w-full rounded-card border border-border bg-surface px-4 py-2.5 text-gray-800 shadow-sm transition-colors duration-base",
             "placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary",
             error && "border-danger focus:ring-danger focus:border-danger",
             className

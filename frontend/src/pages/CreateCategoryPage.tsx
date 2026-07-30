@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { category } from "../services/category/category";
 import { CategoryRequest } from "../interfaces/category/CategoryRequest";
 import CategoryForm from "../components/CategoryForm";
 
 export default function CreateCategoryPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<CategoryRequest>({
     name: "",
     description: "",
@@ -20,6 +22,9 @@ export default function CreateCategoryPage() {
       await category.createCategory(formData);
       setSuccessMessage("Categoría creada con éxito.");
       setFormData({ name: "", description: "" });
+      setTimeout(() => {
+        navigate("/dashboard/category");
+      }, 1200);
     } catch {
       setErrorMessage("Hubo un error al crear la categoría.");
     }
@@ -31,7 +36,7 @@ export default function CreateCategoryPage() {
       formData={formData}
       setFormData={setFormData}
       onSubmit={handleSubmit}
-      submitLabel="Crear"
+      submitLabel="Crear categoría"
       successMessage={successMessage}
       errorMessage={errorMessage}
     />

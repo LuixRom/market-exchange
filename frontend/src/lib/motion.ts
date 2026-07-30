@@ -11,5 +11,6 @@ export const slideUp: Variants = {
 };
 
 export const staggerChildren: Variants = {
+  hidden: {},
   visible: { transition: { staggerChildren: 0.06 } },
 };

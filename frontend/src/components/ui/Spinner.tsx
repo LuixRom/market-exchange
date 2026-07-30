@@ -8,8 +8,9 @@ interface SpinnerProps {
 
 export function Spinner({ className, label = "Cargando..." }: SpinnerProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-10 text-gray-500">
+    <div role="status" className="flex flex-col items-center justify-center gap-3 py-10 text-gray-500">
       <motion.span
+        aria-hidden="true"
         className={cn(
           "block h-8 w-8 rounded-full border-2 border-border border-t-primary",
           className

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { category as categoryApi} from "../services/category/category";
+import { category as categoryApi } from "../services/category/category";
 import { CategoryRequest } from "../interfaces/category/CategoryRequest";
 import { useParams, useNavigate } from "react-router-dom";
 import CategoryForm from "../components/CategoryForm";
@@ -16,7 +16,6 @@ export default function EditCategoryPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Cargar datos de la categoría existente
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -37,7 +36,7 @@ export default function EditCategoryPage() {
     try {
       await categoryApi.updateCategory(Number(id), formData);
       setSuccessMessage("Categoría actualizada con éxito.");
-      setTimeout(() => navigate("/dashboard"), 2000); // Redirige después de 2 segundos
+      setTimeout(() => navigate("/dashboard/category"), 1200);
     } catch {
       setErrorMessage("Hubo un error al actualizar la categoría.");
     }
@@ -49,7 +48,7 @@ export default function EditCategoryPage() {
       formData={formData}
       setFormData={setFormData}
       onSubmit={handleSubmit}
-      submitLabel="Guardar Cambios"
+      submitLabel="Guardar cambios"
       successMessage={successMessage}
       errorMessage={errorMessage}
     />
