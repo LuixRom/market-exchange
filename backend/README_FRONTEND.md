@@ -46,15 +46,15 @@ Minimas para local:
 ```env
 POSTGRES_DB=marketexchange
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+POSTGRES_PASSWORD=<local-db-password>
 POSTGRES_PORT=5555
 BACKEND_PORT=8080
 
 SPRING_PROFILES_ACTIVE=local
 DB_URL=jdbc:postgresql://localhost:5555/marketexchange
 DB_USERNAME=postgres
-DB_PASSWORD=postgres
-JWT_SECRET=change-me-to-a-long-random-string-for-local-development
+DB_PASSWORD=<local-db-password>
+JWT_SECRET=<long-random-local-secret>
 ```
 
 Variables importantes por bloque:
@@ -72,11 +72,11 @@ Si `SEED_ENABLED=true`, se crean estas cuentas:
 
 | Rol | Email | Password |
 | --- | --- | --- |
-| ADMIN | `admin@marketexchange.local` | `Admin12345` |
-| USER | `cliente1@marketexchange.local` | `Cliente12345` |
-| USER | `cliente2@marketexchange.local` | `Cliente12345` |
+| ADMIN | `admin@marketexchange.local` | valor de `SEED_ADMIN_PASSWORD` |
+| USER | `cliente1@marketexchange.local` | valor de `SEED_USER1_PASSWORD` |
+| USER | `cliente2@marketexchange.local` | valor de `SEED_USER2_PASSWORD` |
 
-Las cuentas seed nacen con email verificado.
+Las cuentas seed nacen con email verificado. Para activarlas, usar `SEED_ENABLED=true` y definir las tres contrasenas `SEED_*_PASSWORD` en el `.env` local.
 
 ## Autenticacion
 
