@@ -1,9 +1,23 @@
 // src/apis/api.ts
 
-import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+
+type RetriableAxiosRequestConfig = AxiosRequestConfig & {
+  _retry?: boolean;
+};
 
 export function getApiBaseUrl(): string {
-  return `http://${import.meta.env.VITE_BASE_URL}:8080`;
+  const apiUrl = import.meta.env.VITE_API_URL?.trim();
+  if (apiUrl) {
+    return apiUrl.replace(/\/$/, "");
+  }
+
+  const legacyBaseUrl = import.meta.env.VITE_BASE_URL?.trim();
+  if (legacyBaseUrl) {
+    return `http://${legacyBaseUrl}:8080`;
+  }
+
+  return "http://localhost:8080";
 }
 
 export default class Api {
@@ -24,17 +38,75 @@ export default class Api {
       baseURL: basePath,
     });
 
-    // Interceptor para agregar la autorización a cada solicitud
+    // Interceptor para agregar la autorizacion a cada solicitud.
     this._axiosInstance.interceptors.request.use(
       (config) => {
-        // Si el endpoint es de registro, no incluir Authorization
-        const isRegisterEndpoint = config.url?.includes("/auth/register");
-        if (!isRegisterEndpoint && this._authorization) {
+        const isPublicAuthEndpoint = [
+          "/auth/register",
+          "/auth/login",
+          "/auth/verify-email",
+          "/auth/forgot-password",
+          "/auth/reset-password",
+          "/auth/refresh",
+        ].some((endpoint) => config.url?.includes(endpoint));
+
+        if (!isPublicAuthEndpoint && this._authorization) {
           config.headers.Authorization = `Bearer ${this._authorization}`;
         }
         return config;
       },
       (error) => Promise.reject(error)
+    );
+
+    this._axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError) => {
+        const originalRequest = error.config as RetriableAxiosRequestConfig | undefined;
+        const refreshToken = localStorage.getItem("refreshToken");
+        const isRefreshRequest = originalRequest?.url?.includes("/auth/refresh");
+
+        if (
+          error.response?.status === 401 &&
+          originalRequest &&
+          !originalRequest._retry &&
+          refreshToken &&
+          !isRefreshRequest
+        ) {
+          originalRequest._retry = true;
+
+          try {
+            const response = await this._axiosInstance.post<{
+              token: string;
+              refreshToken?: string;
+              emailVerified?: boolean;
+            }>("/auth/refresh", { token: refreshToken });
+
+            this._authorization = response.data.token;
+            localStorage.setItem("accessToken", response.data.token);
+            if (response.data.refreshToken) {
+              localStorage.setItem("refreshToken", response.data.refreshToken);
+            }
+            if (typeof response.data.emailVerified === "boolean") {
+              localStorage.setItem("emailVerified", String(response.data.emailVerified));
+            }
+
+            originalRequest.headers = {
+              ...originalRequest.headers,
+              Authorization: `Bearer ${response.data.token}`,
+            };
+
+            return this._axiosInstance.request(originalRequest);
+          } catch (refreshError) {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("emailVerified");
+            this._authorization = null;
+            return Promise.reject(refreshError);
+          }
+        }
+
+        return Promise.reject(error);
+      }
     );
   }
 
@@ -98,7 +170,7 @@ export default class Api {
     const configOptions: AxiosRequestConfig = {
       ...options,
       method: "PUT",
-      data: data,
+      data,
     };
 
     return this.request<ResponseBodyType>(configOptions);
@@ -111,7 +183,7 @@ export default class Api {
     const configOptions: AxiosRequestConfig = {
       ...options,
       method: "PATCH",
-      data: data,
+      data,
     };
 
     return this.request<ResponseBodyType>(configOptions);

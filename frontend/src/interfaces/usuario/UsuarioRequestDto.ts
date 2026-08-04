@@ -9,3 +9,8 @@ export interface UsuarioRequestDto {
   role: string; // El rol del usuario, obligatorio
 }
 
+export interface ProfileUpdateRequest {
+  bio?: string;
+  avatarUrl?: string;
+  location?: string;
+}

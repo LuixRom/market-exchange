@@ -9,7 +9,9 @@ export async function login(LoginRequest: LoginRequest) {
         url: "/auth/login",
     });
 
-    api.authorization = response.data.token;
+    if (response.data.token) {
+        api.authorization = response.data.token;
+    }
 
     return response;
 }

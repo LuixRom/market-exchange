@@ -21,6 +21,13 @@ import AllCategoryPage from './pages/AllCategoryPage';
 import ItemsByCategory from './pages/ItemsByCategory';
 import AgreementPage from "./pages/AgreementPage.tsx"
 import AgreementByIdPage from './pages/AgreementByIdPage.tsx';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ItemDetailPage from './pages/ItemDetailPage';
+import AdminItemModerationPage from './pages/AdminItemModerationPage';
+import AdminReportsPage from './pages/AdminReportsPage';
+import AdminUsersPage from './pages/AdminUsersPage';
 
 //Vamos a crear un router y vamos a llamar a createBrowserRouter
 const MainLayout = () => (
@@ -60,6 +67,18 @@ const router = createBrowserRouter([
         element: <RegisterPage />,
       },
       {
+        path: '/verify-email',
+        element: <VerifyEmailPage />,
+      },
+      {
+        path: '/forgot-password',
+        element: <ForgotPasswordPage />,
+      },
+      {
+        path: '/reset-password',
+        element: <ResetPasswordPage />,
+      },
+      {
         path: '/dashboard',
         element: <ProtectedRoute />, // Ruta protegida
         children: [
@@ -89,11 +108,27 @@ const router = createBrowserRouter([
             ],
           },
           {
+            path: 'admin/items',
+            element: <AdminItemModerationPage />,
+          },
+          {
+            path: 'admin/reports',
+            element: <AdminReportsPage />,
+          },
+          {
+            path: 'admin/users',
+            element: <AdminUsersPage />,
+          },
+          {
             path: 'item',
             children:[
               {path: 'create',
               element: <RegisterItemPage />
             },
+              {
+                path: ':id',
+                element: <ItemDetailPage />
+              },
             ]
           },
           {

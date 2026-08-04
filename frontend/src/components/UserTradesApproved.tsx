@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { usuario } from "../services/user/user";
 import { Agreement } from "../services/agreement/Agreement";
 import { AgreementResponse } from "../interfaces/agreement/AgreementResponse";
 import { useNavigate } from "react-router-dom";
@@ -11,67 +10,40 @@ import { FaExchangeAlt, FaCheckCircle } from "react-icons/fa";
 export default function UserTradesAccepted() {
   const [trades, setTrades] = useState<AgreementResponse[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [userId, setUserId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchUserId() {
-      try {
-        const userInfo = await usuario.getMyInfo();
-        setUserId(userInfo.id);
-      } catch {
-        setErrorMessage("Error al obtener la información del usuario.");
-      }
-    }
-
-    fetchUserId();
-  }, []);
-
-  useEffect(() => {
     async function fetchUserTrades() {
-      if (userId === null) return;
-
       try {
-        const userTrades = await Agreement.getAllAgreements();
-        const userSpecificTrades = userTrades
-          .filter(
-            (trade) =>
-              (trade.id_Ini === userId || trade.id_Fin === userId) &&
-              trade.state === "ACCEPTED"
-          )
-          .slice(-3);
-        setTrades(userSpecificTrades);
+        const userTrades = await Agreement.getMyAgreements();
+        const acceptedTrades = userTrades
+          .filter((trade) => trade.status === "ACCEPTED" || trade.status === "COMPLETED")
+          .slice(0, 3);
+        setTrades(acceptedTrades);
       } catch {
-        setErrorMessage("Error al obtener los tradeos del usuario.");
+        setErrorMessage("Error al obtener tus tradeos recientes.");
       }
     }
 
     fetchUserTrades();
-  }, [userId]);
-
-  const handleTradeClick = (tradeId: number) => {
-    navigate(`/dashboard/agreements/${tradeId}`);
-  };
+  }, []);
 
   return (
     <div className="w-full">
-      {/* Encabezado con Icono y Subtítulo */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 shadow-xs">
           <FaExchangeAlt size={18} />
         </div>
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Trades Recientes</h2>
-          <p className="text-xs text-gray-500 font-medium mt-0.5">Revisa los intercambios que han sido aprobados.</p>
+          <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Trades recientes</h2>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">Revisa los intercambios aceptados o completados.</p>
         </div>
       </div>
 
-      {/* Mostrar errores */}
       {errorMessage && (
         <div className="text-danger text-center text-sm mb-4">{errorMessage}</div>
       )}
 
-      {/* Lista de tradeos */}
       {trades.length > 0 ? (
         <motion.ul
           className="space-y-4"
@@ -81,7 +53,7 @@ export default function UserTradesAccepted() {
         >
           {trades.map((trade) => (
             <motion.li key={trade.id} variants={slideUp}>
-              <TradeCard trade={trade} onClick={() => handleTradeClick(trade.id)} showState={false} />
+              <TradeCard trade={trade} onClick={() => navigate(`/dashboard/agreements/${trade.id}`)} showState={false} />
             </motion.li>
           ))}
         </motion.ul>
@@ -94,10 +66,10 @@ export default function UserTradesAccepted() {
             </div>
           </div>
           <h3 className="text-base font-extrabold text-gray-900 mb-1">
-            No tienes trades aprobados
+            No tienes trades aceptados
           </h3>
           <p className="text-xs text-gray-500 max-w-xs mb-5">
-            Cuando apruebes intercambios, los verás aquí.
+            Cuando aceptes intercambios, los veras aqui.
           </p>
           <button
             onClick={() => navigate("/dashboard/cuenta")}

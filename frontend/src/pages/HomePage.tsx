@@ -14,7 +14,6 @@ import {
   FaInstagram,
   FaWhatsapp,
   FaUser,
-  FaRecycle,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthProvider";
 import { Navigate, Link } from "react-router-dom";

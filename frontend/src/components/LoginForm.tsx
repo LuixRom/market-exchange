@@ -32,7 +32,6 @@ import { slideUp } from "../lib/motion";
 
 const idleImages: string[] = [idle1, idle2, idle3, idle4, idle5];
 const coverImages: string[] = [cover1, cover2, cover3, cover4, cover5, cover6, cover7, cover8];
-const mainLogo = "/img/logos_Mesa de trabajo 1 copia 3.png";
 
 export default function LoginForm() {
   const [formData, setFormData] = useState<LoginRequest>({ username: "", password: "" });
@@ -254,9 +253,9 @@ export default function LoginForm() {
                     />
                     <span>Recordarme</span>
                   </label>
-                  <a href="#" className="font-bold text-primary hover:underline">
-                    ¿Olvidaste tu contraseña?
-                  </a>
+                  <Link to="/forgot-password" className="font-bold text-primary hover:underline">
+                    Olvidaste tu contrasena?
+                  </Link>
                 </div>
 
                 <Button type="submit" size="lg" className="w-full py-3.5 text-base font-bold rounded-xl mt-2">

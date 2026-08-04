@@ -60,6 +60,7 @@ $env:SUPABASE_SECRET_KEY="TU_SERVICE_ROLE_KEY"
 $env:SUPABASE_STORAGE_BUCKET="market-exchange-items"
 
 $env:FRONTEND_BASE_URL="http://localhost:5173"
+$env:FRONTEND_RESET_PASSWORD_PATH="/reset-password"
 $env:CORS_ALLOWED_ORIGINS="http://localhost:5173"
 
 $env:SEED_ENABLED="false"
@@ -70,6 +71,7 @@ Notas:
 
 - `DB_PASSWORD` es la password de la base de datos de Supabase, no la publishable key.
 - `SUPABASE_SECRET_KEY` debe ser la service role key y no debe subirse al repo.
+- Para que verificacion y recuperacion de contrasena lleguen por correo, configurar `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME` y `MAIL_PASSWORD`.
 - `MANAGEMENT_HEALTH_MAIL_ENABLED=false` evita que `/actuator/health` falle en local por no tener SMTP configurado.
 
 ### 5. Levantar Backend

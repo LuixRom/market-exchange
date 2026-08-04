@@ -13,6 +13,30 @@ export const Agreement = {
         return response.data
     },
 
+    async getSentAgreements(): Promise<AgreementResponse[]> {
+        const api = await Api.getInstance();
+        const response = await api.get<AgreementResponse[]>({ url: "/agreements/sent" });
+        return response.data;
+    },
+
+    async getReceivedAgreements(): Promise<AgreementResponse[]> {
+        const api = await Api.getInstance();
+        const response = await api.get<AgreementResponse[]>({ url: "/agreements/received" });
+        return response.data;
+    },
+
+    async getMyAgreements(): Promise<AgreementResponse[]> {
+        const [sent, received] = await Promise.all([
+            this.getSentAgreements(),
+            this.getReceivedAgreements(),
+        ]);
+        return [...sent, ...received].sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+        });
+    },
+
     /**
      * Crear un nuevo acuerdo
      * @param agreementRequest Solicitud para crear un acuerdo
@@ -65,6 +89,12 @@ export const Agreement = {
     async rejectAgreement(id: number): Promise<AgreementResponse> {
         const api = await Api.getInstance();
         const response = await api.put<void, AgreementResponse>(undefined, { url: `/agreements/${id}/reject` });
+        return response.data;
+    },
+
+    async cancelAgreement(id: number): Promise<AgreementResponse> {
+        const api = await Api.getInstance();
+        const response = await api.put<void, AgreementResponse>(undefined, { url: `/agreements/${id}/cancel` });
         return response.data;
     },
 

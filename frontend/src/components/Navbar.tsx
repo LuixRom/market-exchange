@@ -5,11 +5,15 @@ import {
   FaHome,
   FaPlusCircle,
   FaThLarge,
+  FaClipboardCheck,
+  FaFlag,
+  FaUsers,
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { usuario } from "../services/user/user";
 import { DropdownMenu, DropdownMenuItem } from "./ui/DropdownMenu";
 import { Button } from "./ui/Button";
+import NotificationBell from "./NotificationBell";
 
 const marketingLinkClass =
   "hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-card px-1";
@@ -155,6 +159,44 @@ export default function Navbar() {
           </Link>
         )}
 
+        {role === "ADMIN" && (
+          <>
+            <Link
+              to="/dashboard/admin/items"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                location.pathname.startsWith("/dashboard/admin/items")
+                  ? "bg-primary/10 text-primary font-bold"
+                  : "text-gray-600 hover:text-primary hover:bg-gray-100"
+              }`}
+            >
+              <FaClipboardCheck size={15} />
+              <span>Items</span>
+            </Link>
+            <Link
+              to="/dashboard/admin/reports"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                location.pathname.startsWith("/dashboard/admin/reports")
+                  ? "bg-primary/10 text-primary font-bold"
+                  : "text-gray-600 hover:text-primary hover:bg-gray-100"
+              }`}
+            >
+              <FaFlag size={15} />
+              <span>Reportes</span>
+            </Link>
+            <Link
+              to="/dashboard/admin/users"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                location.pathname.startsWith("/dashboard/admin/users")
+                  ? "bg-primary/10 text-primary font-bold"
+                  : "text-gray-600 hover:text-primary hover:bg-gray-100"
+              }`}
+            >
+              <FaUsers size={15} />
+              <span>Usuarios</span>
+            </Link>
+          </>
+        )}
+
         <Link
           to="/dashboard/category"
           className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
@@ -171,46 +213,49 @@ export default function Navbar() {
       {/* Sección Derecha: Usuario y Dropdown */}
       <div className="flex items-center gap-3">
         {auth.isAuthenticated ? (
-          <DropdownMenu
-            trigger={
-              <button
-                className="flex items-center gap-2.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold py-1.5 px-3.5 rounded-full transition-all border border-primary/20"
-                aria-label="Perfil de usuario"
-              >
-                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                  {userName ? userName.charAt(0).toUpperCase() : <FaRegUserCircle />}
-                </div>
-                <div className="text-left leading-tight hidden sm:block">
-                  <span className="block text-sm text-gray-900 font-bold">{userName || "Usuario"}</span>
-                  <span className="block text-[10px] text-gray-500 font-semibold uppercase tracking-wider">
-                    {role === "ADMIN" ? "Administrador" : "Usuario"}
-                  </span>
-                </div>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 text-primary ml-0.5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+          <>
+            <NotificationBell />
+            <DropdownMenu
+              trigger={
+                <button
+                  className="flex items-center gap-2.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold py-1.5 px-3.5 rounded-full transition-all border border-primary/20"
+                  aria-label="Perfil de usuario"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 9.293a1 1 0 011.414 0L10 12.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            }
-          >
-            <DropdownMenuItem asChild>
-              <Link to="/dashboard/cuenta" className="font-semibold">Cuenta</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => auth.logout()}
-              className="text-danger hover:bg-danger/10 font-semibold"
+                  <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                    {userName ? userName.charAt(0).toUpperCase() : <FaRegUserCircle />}
+                  </div>
+                  <div className="text-left leading-tight hidden sm:block">
+                    <span className="block text-sm text-gray-900 font-bold">{userName || "Usuario"}</span>
+                    <span className="block text-[10px] text-gray-500 font-semibold uppercase tracking-wider">
+                      {role === "ADMIN" ? "Administrador" : "Usuario"}
+                    </span>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-primary ml-0.5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 9.293a1 1 0 011.414 0L10 12.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              }
             >
-              Cerrar sesión
-            </DropdownMenuItem>
-          </DropdownMenu>
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard/cuenta" className="font-semibold">Cuenta</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => auth.logout()}
+                className="text-danger hover:bg-danger/10 font-semibold"
+              >
+                Cerrar sesión
+              </DropdownMenuItem>
+            </DropdownMenu>
+          </>
         ) : (
           <div className="flex items-center gap-3">
             <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-primary transition-colors">

@@ -1,24 +1,41 @@
 import axios from "axios";
+import { getApiBaseUrl } from "../../apis/api";
+import { ItemResponse } from "../../interfaces/item/ItemResponse";
 
-/**
- * Realiza una solicitud para obtener una imagen protegida desde el backend.
- * @param imageUrl - La URL del endpoint de la imagen en el backend.
- * @param token - El token JWT para autenticación.
- * @returns - Una URL temporal (blob URL) que se puede usar para mostrar la imagen.
- */
 export async function fetchImage(imageUrl: string, token: string): Promise<string> {
-  try {
-    const response = await axios.get(imageUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`, // Autenticación con el token JWT
-      },
-      responseType: "blob", // Especifica que la respuesta es un blob (archivo binario)
-    });
+  const response = await axios.get(imageUrl, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    responseType: "blob",
+  });
 
-    // Generar una URL temporal para el blob
-    return URL.createObjectURL(response.data);
-  } catch (error) {
-    console.error("Error al cargar la imagen:", error);
-    throw error; // Lanza el error para que el componente lo maneje
+  return URL.createObjectURL(response.data);
+}
+
+export async function fetchItemImage(item: ItemResponse, token: string): Promise<string> {
+  const imagePaths = [
+    ...(item.imageUrls || []),
+    item.imageUrl,
+    `/item/${item.id}/image`,
+  ].filter((path): path is string => Boolean(path));
+
+  const uniqueImagePaths = Array.from(new Set(imagePaths));
+
+  if (uniqueImagePaths.length === 0) {
+    return "/default-placeholder.png";
   }
+
+  let lastError: unknown;
+
+  for (const imagePath of uniqueImagePaths) {
+    try {
+      const imageUrl = imagePath.startsWith("http") ? imagePath : `${getApiBaseUrl()}${imagePath}`;
+      return await fetchImage(imageUrl, token);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
 }

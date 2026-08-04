@@ -7,8 +7,7 @@ import { item } from "../services/item/item";
 import { Agreement } from "../services/agreement/Agreement";
 import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { AgreementResponse } from "../interfaces/agreement/AgreementResponse";
-import { fetchImage } from "../services/image/image";
-import { getApiBaseUrl } from "../apis/api";
+import { fetchItemImage } from "../services/image/image";
 import { Button } from "../components/ui/Button";
 import { fadeIn, slideUp } from "../lib/motion";
 import {
@@ -39,6 +38,7 @@ export default function Dashboard() {
   const [userItems, setUserItems] = useState<ItemResponse[]>([]);
   const [userTrades, setUserTrades] = useState<AgreementResponse[]>([]);
   const [imageUrls, setImageUrls] = useState<{ [key: number]: string }>({});
+  const [pendingItemsCount, setPendingItemsCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -48,15 +48,21 @@ export default function Dashboard() {
         setUserName(info.firstname);
 
         // Obtener publicaciones del usuario
-        const items = await item.getItemsByUser(info.id);
+        const items = await item.getMyItems();
         setUserItems(items);
 
         // Obtener acuerdos del usuario
-        const allAgreements = await Agreement.getAllAgreements();
-        const myAgreements = allAgreements.filter(
-          (t) => t.id_Ini === info.id || t.id_Fin === info.id
-        );
+        const myAgreements = await Agreement.getMyAgreements();
         setUserTrades(myAgreements);
+
+        if (role === "ADMIN") {
+          const pendingItems = await item.getCatalog({
+            status: "PENDING_REVIEW",
+            page: 0,
+            size: 1,
+          });
+          setPendingItemsCount(pendingItems.totalElements);
+        }
       } catch (err) {
         console.error("Error al cargar información del dashboard:", err);
       } finally {
@@ -65,7 +71,7 @@ export default function Dashboard() {
     };
 
     fetchUserData();
-  }, []);
+  }, [role]);
 
   // Cargar miniaturas de las publicaciones
   useEffect(() => {
@@ -75,10 +81,7 @@ export default function Dashboard() {
 
       const promises = userItems.map(async (itm) => {
         try {
-          const url = await fetchImage(
-            `${getApiBaseUrl()}${itm.imageUrl}`,
-            accessToken
-          );
+          const url = await fetchItemImage(itm, accessToken);
           return { id: itm.id, url };
         } catch {
           return { id: itm.id, url: "/default-placeholder.png" };
@@ -97,12 +100,12 @@ export default function Dashboard() {
   }, [userItems]);
 
   // Conteos calculados para las métricas
-  const publishedCount = userItems.length;
+  const publishedCount = role === "ADMIN" ? pendingItemsCount : userItems.length;
   const completedTradesCount = userTrades.filter(
-    (t) => t.state === "ACCEPTED"
+    (t) => t.status === "ACCEPTED" || t.status === "COMPLETED"
   ).length;
   const pendingTradesCount = userTrades.filter(
-    (t) => t.state === "PENDING"
+    (t) => t.status === "PENDING"
   ).length;
   const impactPoints = (publishedCount * 5) + (completedTradesCount * 10) + 3;
 
@@ -110,28 +113,28 @@ export default function Dashboard() {
   const activities: ActivityItem[] = [];
 
   userTrades.forEach((t) => {
-    if (t.state === "ACCEPTED") {
+    if (t.status === "ACCEPTED" || t.status === "COMPLETED") {
       activities.push({
         id: `trade-accepted-${t.id}`,
         type: "trade_completed",
         title: "Completaste un intercambio",
-        subtitle: `${t.itemIniName} ↔ ${t.itemFinName}`,
+        subtitle: `${t.offeredItemName} -> ${t.requestedItemName}`,
         date: "Reciente",
       });
-    } else if (t.state === "PENDING") {
+    } else if (t.status === "PENDING") {
       activities.push({
         id: `trade-pending-${t.id}`,
         type: "trade_pending",
         title: "Tienes un intercambio pendiente",
-        subtitle: `${t.itemIniName} ↔ ${t.itemFinName}`,
+        subtitle: `${t.offeredItemName} -> ${t.requestedItemName}`,
         date: "Pendiente",
       });
-    } else if (t.state === "REJECTED") {
+    } else if (t.status === "REJECTED" || t.status === "CANCELLED") {
       activities.push({
         id: `trade-rejected-${t.id}`,
         type: "trade_rejected",
         title: "Intercambio no concretado",
-        subtitle: `${t.itemIniName} ↔ ${t.itemFinName}`,
+        subtitle: `${t.offeredItemName} -> ${t.requestedItemName}`,
         date: "Finalizado",
       });
     }
@@ -155,7 +158,7 @@ export default function Dashboard() {
         </span>
       );
     }
-    if (status === "PENDING" || status === "EN REVISIÓN") {
+    if (status === "PENDING_REVIEW" || status === "PENDING" || status === "EN REVISIÓN") {
       return (
         <span className="px-3 py-1 text-xs font-bold rounded-full bg-amber-100/80 text-amber-700">
           En revisión
@@ -228,7 +231,7 @@ export default function Dashboard() {
       >
         {/* Card 1: Mis Ítems Publicados */}
         <div
-          onClick={() => navigate("/dashboard/category")}
+          onClick={() => navigate(role === "ADMIN" ? "/dashboard/admin/items" : "/dashboard/cuenta?tab=items")}
           className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
         >
           <div className="flex items-center gap-4">
@@ -240,10 +243,10 @@ export default function Dashboard() {
                 {publishedCount}
               </span>
               <span className="block text-xs font-bold text-gray-900 mt-1">
-                Mis ítems publicados
+                {role === "ADMIN" ? "Items en revision" : "Mis items publicados"}
               </span>
               <span className="block text-[11px] text-gray-400 font-medium">
-                Activos en el marketplace
+                {role === "ADMIN" ? "Pendientes de aprobar" : "Activos en el marketplace"}
               </span>
             </div>
           </div>
@@ -254,7 +257,7 @@ export default function Dashboard() {
 
         {/* Card 2: Tradeos Realizados */}
         <div
-          onClick={() => navigate("/dashboard/cuenta")}
+          onClick={() => navigate("/dashboard/cuenta?tab=trades")}
           className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
         >
           <div className="flex items-center gap-4">
@@ -280,7 +283,7 @@ export default function Dashboard() {
 
         {/* Card 3: Tradeos Por Realizar */}
         <div
-          onClick={() => navigate("/dashboard/cuenta")}
+          onClick={() => navigate("/dashboard/cuenta?tab=pending")}
           className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
         >
           <div className="flex items-center gap-4">
@@ -352,7 +355,7 @@ export default function Dashboard() {
               </div>
 
               <Link
-                to="/dashboard/category"
+                to={role === "ADMIN" ? "/dashboard/admin/items" : "/dashboard/cuenta?tab=items"}
                 className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
               >
                 Ver todos <FaChevronRight size={10} />
@@ -412,7 +415,7 @@ export default function Dashboard() {
 
           <div className="pt-4 border-t border-gray-100 text-center mt-4">
             <Link
-              to="/dashboard/category"
+                to={role === "ADMIN" ? "/dashboard/admin/items" : "/dashboard/cuenta?tab=items"}
               className="text-xs font-bold text-primary hover:text-primary-hover transition-colors inline-flex items-center gap-1.5"
             >
               Ver todas mis publicaciones <FaChevronRight size={10} />
@@ -501,7 +504,7 @@ export default function Dashboard() {
 
           <div className="pt-4 border-t border-gray-100 text-center mt-4">
             <Link
-              to="/dashboard/category"
+              to="/dashboard/cuenta?tab=trades"
               className="text-xs font-bold text-primary hover:text-primary-hover transition-colors inline-flex items-center gap-1.5"
             >
               Ver toda la actividad <FaChevronRight size={10} />

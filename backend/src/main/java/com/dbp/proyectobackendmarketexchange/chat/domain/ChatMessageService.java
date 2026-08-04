@@ -73,6 +73,7 @@ public class ChatMessageService {
 
         realtimeMessagingService.sendChatMessage(current, response);
         realtimeMessagingService.sendChatMessage(recipient, response);
+        realtimeMessagingService.sendChatMessageToAgreement(response);
 
         return response;
     }

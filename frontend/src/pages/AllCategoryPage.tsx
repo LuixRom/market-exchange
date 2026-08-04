@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthProvider";
 import { Spinner } from "../components/ui/Spinner";
 import { Button } from "../components/ui/Button";
 import { useToast } from "../components/ui/Toast";
-import { staggerChildren, slideUp, fadeIn } from "../lib/motion";
+import { slideUp, fadeIn } from "../lib/motion";
 import {
   FaSearch,
   FaFolderOpen,

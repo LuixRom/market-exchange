@@ -7,6 +7,8 @@ export async function register(registerRequest: RegisterRequest) {
     const response = await api.post<RegisterRequest, AuthResponse>(registerRequest, {
         url: "/auth/register",
     });
-    api.authorization = response.data.token;
+    if (response.data.token) {
+        api.authorization = response.data.token;
+    }
     return response;
 }

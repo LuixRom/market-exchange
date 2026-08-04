@@ -1,3 +1,5 @@
 export interface AuthResponse {
-    token: string;
+    token?: string;
+    refreshToken?: string;
+    emailVerified?: boolean;
 }

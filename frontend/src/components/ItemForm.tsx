@@ -39,8 +39,8 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
     condition: "NEW",
   });
 
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
@@ -88,16 +88,27 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
   }
 
   function handleImageChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null;
-    setImage(file);
-    if (file) {
+    const selectedFiles = Array.from(e.target.files || []);
+
+    if (selectedFiles.length > 4) {
+      setErrorMessage("Puedes subir maximo 4 imagenes por item.");
+      e.target.value = "";
+      return;
+    }
+
+    setImages(selectedFiles);
+    setImagePreviews([]);
+
+    selectedFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setImagePreviews((current) => [...current, reader.result as string]);
       };
       reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
+    });
+
+    if (selectedFiles.length > 0) {
+      setErrorMessage(null);
     }
   }
 
@@ -116,8 +127,13 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
       return;
     }
 
-    if (!image) {
+    if (images.length === 0) {
       setErrorMessage("Por favor selecciona una imagen para tu ítem.");
+      return;
+    }
+
+    if (images.length > 4) {
+      setErrorMessage("Puedes subir maximo 4 imagenes por item.");
       return;
     }
 
@@ -129,7 +145,7 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
       formDataToSend.append("condition", formData.condition);
       formDataToSend.append("category_id", selectedCategory.toString());
       formDataToSend.append("user_id", userId.toString());
-      formDataToSend.append("image", image);
+      images.forEach((file) => formDataToSend.append("images", file));
 
       const response = await item.createItem(formDataToSend);
       onSubmitSuccess(response);
@@ -358,20 +374,26 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handleImageChange}
-                      required={!image}
+                      required={images.length === 0}
                       className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                     />
 
-                    {imagePreview ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <img
-                          src={imagePreview}
-                          alt="Vista previa"
-                          className="w-20 h-20 object-cover rounded-xl border border-gray-200 shadow-xs"
-                        />
+                    {imagePreviews.length > 0 ? (
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+                          {imagePreviews.map((preview, index) => (
+                            <img
+                              key={`${images[index]?.name || "preview"}-${index}`}
+                              src={preview}
+                              alt={`Vista previa ${index + 1}`}
+                              className="w-full aspect-square object-cover rounded-xl border border-gray-200 shadow-xs"
+                            />
+                          ))}
+                        </div>
                         <span className="text-xs font-bold text-primary flex items-center gap-1">
-                          <FaCheck size={12} /> {image?.name}
+                          <FaCheck size={12} /> {images.length} imagen{images.length === 1 ? "" : "es"} seleccionada{images.length === 1 ? "" : "s"}
                         </span>
                       </div>
                     ) : (

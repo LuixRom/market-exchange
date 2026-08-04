@@ -36,6 +36,13 @@ public class RealtimeMessagingService {
         );
     }
 
+    public void sendChatMessageToAgreement(ChatMessageResponseDto message) {
+        messagingTemplate.convertAndSend(
+                "/topic/agreements/" + message.getTradeProposalId() + "/messages",
+                message
+        );
+    }
+
     public void sendAgreementEvent(Usuario recipient, TradeProposalResponseDto tradeProposal) {
         messagingTemplate.convertAndSendToUser(
                 EmailNormalizer.normalize(recipient.getEmail()),

@@ -42,8 +42,8 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        String token = authenticationService.requestPasswordReset(request.getEmail());
-        return ResponseEntity.ok(new MessageResponse("Si el correo existe, se genero un token de recuperacion", token));
+        authenticationService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse("Revisa tu correo, te enviamos un enlace de recuperacion", null));
     }
 
     @PostMapping("/reset-password")

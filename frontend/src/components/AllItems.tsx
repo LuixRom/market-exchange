@@ -7,9 +7,8 @@ import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { CategoryResponse } from "../interfaces/category/CategoryResponse";
 import { useAuth } from "../context/AuthProvider";
 import { usuario } from "../services/user/user";
-import { fetchImage } from "../services/image/image";
+import { fetchItemImage } from "../services/image/image";
 import { Agreement } from "../services/agreement/Agreement";
-import { getApiBaseUrl } from "../apis/api";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { Spinner } from "./ui/Spinner";
@@ -51,11 +50,15 @@ export default function AllItems() {
 
             setLoading(true);
             try {
-                const allItems = await item.getAllItems();
+                const catalog = await item.getCatalog({
+                    status: role === "ADMIN" ? "PENDING_REVIEW" : "APPROVED",
+                    page: 0,
+                    size: 100,
+                    sort: "createdAt,desc",
+                });
                 const filtered = role === "ADMIN"
-                    ? allItems.filter((item) => item.status === "PENDING")
-                    : allItems.filter((item) => item.status === "APPROVED" && item.user_id !== userId
-                );
+                    ? catalog.content
+                    : catalog.content.filter((item) => item.user_id !== userId);
                 const allCategories = await category.getAllCategories();
                 setItems(filtered);
                 setFilteredItems(filtered);
@@ -80,7 +83,7 @@ export default function AllItems() {
 
             const imagePromises = items.map(async (item) => {
                 try {
-                    const imageUrl = await fetchImage(`${getApiBaseUrl()}${item.imageUrl}`, accessToken);
+                    const imageUrl = await fetchItemImage(item, accessToken);
                     return { id: item.id, url: imageUrl };
                 } catch {
                     return { id: item.id, url: "/default-placeholder.png" };
@@ -150,11 +153,11 @@ export default function AllItems() {
 
     const handleTrade = async (itemId: number) => {
         try {
-            const allAgreements = await Agreement.getAllAgreements();
+            const allAgreements = await Agreement.getMyAgreements();
             const existingAgreement = allAgreements.find(
                 (agreement) =>
-                    (agreement.id_itemFin === itemId || agreement.id_itemIni === itemId) &&
-                    (agreement.id_Ini === userId || agreement.id_Fin === userId)
+                    agreement.status === "PENDING" &&
+                    (agreement.requestedItemId === itemId || agreement.offeredItemId === itemId)
             );
 
             if (existingAgreement) {
@@ -180,8 +183,14 @@ export default function AllItems() {
                     <FaBoxOpen size={18} />
                 </div>
                 <div>
-                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Publicaciones Disponibles</h2>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">Encuentra ítems que otros usuarios están ofreciendo para intercambiar.</p>
+                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
+                        {role === "ADMIN" ? "Items pendientes de revision" : "Publicaciones disponibles"}
+                    </h2>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">
+                        {role === "ADMIN"
+                            ? "Aprueba o deniega las publicaciones antes de que aparezcan en el catalogo."
+                            : "Encuentra items que otros usuarios estan ofreciendo para intercambiar."}
+                    </p>
                 </div>
             </div>
 
@@ -242,11 +251,13 @@ export default function AllItems() {
                     {filteredItems.map((item) => (
                         <motion.li key={item.id} variants={slideUp}>
                             <Card className="overflow-hidden h-full flex flex-col rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition-shadow">
-                                <img
-                                    src={imageUrls[item.id] || "/default-placeholder.png"}
-                                    alt={item.name}
-                                    className="w-full h-48 object-cover"
-                                />
+                                <div className="w-full h-56 bg-gray-50 border-b border-gray-100 flex items-center justify-center overflow-hidden">
+                                    <img
+                                        src={imageUrls[item.id] || "/default-placeholder.png"}
+                                        alt={item.name}
+                                        className="w-full h-full object-contain p-3"
+                                    />
+                                </div>
                                 <div className="p-4 flex flex-col flex-1">
                                     <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
                                     <p className="text-gray-600 text-sm mt-2 flex-1">{item.description}</p>
@@ -281,13 +292,22 @@ export default function AllItems() {
                                         </div>
                                     )}
                                     {role === "USER" && (
-                                        <Button
-                                            onClick={() => handleTrade(item.id)}
-                                            variant="secondary"
-                                            className="w-full mt-4 text-xs font-bold rounded-xl"
-                                        >
-                                            Tradear
-                                        </Button>
+                                        <div className="flex gap-3 mt-4">
+                                            <Button
+                                                onClick={() => navigate(`/dashboard/item/${item.id}`)}
+                                                variant="primary"
+                                                className="w-full text-xs font-bold rounded-xl"
+                                            >
+                                                Ver detalle
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleTrade(item.id)}
+                                                variant="secondary"
+                                                className="w-full text-xs font-bold rounded-xl"
+                                            >
+                                                Tradear
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                             </Card>

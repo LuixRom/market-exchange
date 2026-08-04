@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usuario } from "../services/user/user";
 import { UsuarioResponseDto } from "../interfaces/usuario/UsuarioResponseDto";
-import { UsuarioRequestDto } from "../interfaces/usuario/UsuarioRequestDto";
+import { ProfileUpdateRequest, UsuarioRequestDto } from "../interfaces/usuario/UsuarioRequestDto";
 import { useAuth } from "../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
+import { rating } from "../services/rating/rating";
+import { RatingReputation } from "../interfaces/rating/Rating";
 import { Input } from "./ui/Input";
 import { Button } from "./ui/Button";
 import { Dialog } from "./ui/Dialog";
@@ -24,8 +26,9 @@ import {
   FaPencilAlt,
   FaCamera,
   FaChevronRight,
+  FaStar,
 } from "react-icons/fa";
-import { slideUp, fadeIn } from "../lib/motion";
+import { slideUp } from "../lib/motion";
 
 export default function UserSettings() {
   const { role } = useAuth();
@@ -33,8 +36,11 @@ export default function UserSettings() {
   const [userInfo, setUserInfo] = useState<UsuarioResponseDto | null>(null);
   const [editMode, setEditMode] = useState<boolean>(false);
   const [formData, setFormData] = useState<UsuarioRequestDto | null>(null);
+  const [profileData, setProfileData] = useState<ProfileUpdateRequest>({});
+  const [reputation, setReputation] = useState<RatingReputation | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,6 +57,12 @@ export default function UserSettings() {
           password: "",
           role: role || "USER",
         });
+        setProfileData({
+          bio: userData.bio || "",
+          avatarUrl: userData.avatarUrl || "",
+          location: userData.location || "",
+        });
+        setReputation(await rating.getReputation(userData.id).catch(() => null));
       } catch (error: unknown) {
         if (error instanceof Error) {
           setErrorMessage(`Error al obtener la información del usuario: ${error.message}`);
@@ -66,6 +78,11 @@ export default function UserSettings() {
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = event.target;
     setFormData((prev) => (prev ? { ...prev, [name]: value } : null));
+  }
+
+  function handleProfileInputChange(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    const { name, value } = event.target;
+    setProfileData((prev) => ({ ...prev, [name]: value }));
   }
 
   function validateForm(data: UsuarioRequestDto | null): string | null {
@@ -84,6 +101,7 @@ export default function UserSettings() {
     try {
       await usuario.eliminarUsuario(userInfo.id);
       setDeleteDialogOpen(false);
+      setDeleteConfirmation("");
       toast({ title: "Cuenta eliminada con éxito.", variant: "success" });
       setUserInfo(null);
       navigate("/");
@@ -112,9 +130,12 @@ export default function UserSettings() {
         delete payload.password;
       }
 
-      const updatedUser = await usuario.actualizarUsuario(userInfo!.id, payload);
+      const [updatedUser, updatedProfile] = await Promise.all([
+        usuario.actualizarUsuario(userInfo!.id, payload),
+        usuario.actualizarMiPerfil(profileData),
+      ]);
       toast({ title: "Información actualizada con éxito.", variant: "success" });
-      setUserInfo(updatedUser);
+      setUserInfo({ ...updatedUser, ...updatedProfile });
       setEditMode(false);
       setErrorMessage(null);
     } catch (error: unknown) {
@@ -172,9 +193,9 @@ export default function UserSettings() {
           <div className="relative flex-shrink-0">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-primary/15 flex items-center justify-center border-4 border-white shadow-md overflow-hidden">
               <img
-                src="/img/logos_Mesa de trabajo 1 copia 3.png"
+                src={userInfo.avatarUrl || "/img/logos_Mesa de trabajo 1 copia 3.png"}
                 alt={`${userInfo.firstname} ${userInfo.lastname}`}
-                className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
+                className="w-full h-full object-cover"
               />
             </div>
             <button
@@ -241,6 +262,33 @@ export default function UserSettings() {
       </motion.div>
 
       {/* 2. Grid de dos columnas: Información Personal + Seguridad */}
+      <motion.div className="grid grid-cols-1 gap-4 md:grid-cols-4" variants={slideUp}>
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Correo</span>
+          <span className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+            userInfo.emailVerified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+          }`}>
+            {userInfo.emailVerified ? "Verificado" : "No verificado"}
+          </span>
+        </div>
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Reputacion</span>
+          <span className="mt-1 flex items-center gap-2 text-sm font-extrabold text-gray-900">
+            <FaStar className="text-amber-400" />
+            {reputation?.averageScore ? reputation.averageScore.toFixed(1) : "-"} / 5
+          </span>
+          <span className="text-xs text-gray-500">{reputation?.ratingCount || 0} calificaciones</span>
+        </div>
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Ubicacion</span>
+          <span className="mt-1 block text-sm font-bold text-gray-900">{userInfo.location || "No registrada"}</span>
+        </div>
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-400">Bio</span>
+          <span className="mt-1 line-clamp-2 block text-sm font-bold text-gray-900">{userInfo.bio || "Sin bio"}</span>
+        </div>
+      </motion.div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Columna Izquierda: Información Personal */}
         <motion.div
@@ -474,6 +522,37 @@ export default function UserSettings() {
               ></textarea>
             </div>
             <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Ubicacion</label>
+              <Input
+                type="text"
+                name="location"
+                value={profileData.location || ""}
+                onChange={handleProfileInputChange}
+                placeholder="Ciudad o zona"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Avatar URL</label>
+              <Input
+                type="url"
+                name="avatarUrl"
+                value={profileData.avatarUrl || ""}
+                onChange={handleProfileInputChange}
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Bio</label>
+              <textarea
+                name="bio"
+                value={profileData.bio || ""}
+                onChange={handleProfileInputChange}
+                rows={3}
+                maxLength={255}
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                placeholder="Cuenta brevemente sobre ti"
+              />
+            </div>            <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Nueva Contraseña (opcional)</label>
               <Input
                 type="password"
@@ -490,7 +569,10 @@ export default function UserSettings() {
       {/* Confirmación de Eliminación */}
       <Dialog
         open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setDeleteConfirmation("");
+        }}
         title="Eliminar cuenta"
         description="¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer."
         footer={
@@ -498,12 +580,24 @@ export default function UserSettings() {
             <Button variant="secondary" onClick={() => setDeleteDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="danger" onClick={handleDeleteUser}>
+            <Button variant="danger" onClick={handleDeleteUser} disabled={deleteConfirmation !== "ELIMINAR"}>
               Eliminar
             </Button>
           </>
         }
-      />
+      >
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1">
+            Escribe ELIMINAR para confirmar
+          </label>
+          <Input
+            value={deleteConfirmation}
+            onChange={(event) => setDeleteConfirmation(event.target.value)}
+            placeholder="ELIMINAR"
+          />
+        </div>
+      </Dialog>
     </div>
   );
 }
+

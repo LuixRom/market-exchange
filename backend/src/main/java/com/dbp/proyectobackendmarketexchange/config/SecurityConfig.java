@@ -121,6 +121,7 @@ public class SecurityConfig {
                         // Acceso de USER (proposer/receiver, verificado en el servicio con
                         // AuthorizationUtils) a shipments; GET listado global y DELETE quedan
                         // ADMIN vía la regla catch-all de abajo.
+                        .requestMatchers(HttpMethod.GET, "/shipments/trade-proposal/{tradeProposalId}").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/shipments/{id}").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/shipments/{id}").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/shipments/{id}/prepare").hasAnyAuthority("USER", "ADMIN")

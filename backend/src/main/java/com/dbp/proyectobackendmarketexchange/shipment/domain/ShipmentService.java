@@ -85,6 +85,13 @@ public class ShipmentService {
         return mapToDto(shipment);
     }
 
+    public ShipmentResponseDto getShipmentByTradeProposalId(Long tradeProposalId) {
+        Shipment shipment = shipmentRepository.findByTradeProposalId(tradeProposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found"));
+        authorizeParticipantOrAdmin(shipment);
+        return mapToDto(shipment);
+    }
+
     public ShipmentResponseDto updateAddresses(Long id, ShipmentAddressUpdateDto dto) {
         Shipment shipment = loadShipment(id);
         authorizeParticipantOrAdmin(shipment);

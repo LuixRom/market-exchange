@@ -6,6 +6,7 @@ import com.dbp.proyectobackendmarketexchange.auth.dto.RegisterRequest;
 import com.dbp.proyectobackendmarketexchange.auth.exception.UserAlreadyExistException;
 import com.dbp.proyectobackendmarketexchange.auth.infrastructure.AccountTokenRepository;
 import com.dbp.proyectobackendmarketexchange.auth.utils.EmailNormalizer;
+import com.dbp.proyectobackendmarketexchange.event.usuario.PasswordResetRequestedEvent;
 import com.dbp.proyectobackendmarketexchange.config.JwtService;
 import com.dbp.proyectobackendmarketexchange.event.usuario.UsuarioCreadoEvent;
 import com.dbp.proyectobackendmarketexchange.exception.InvalidUserFieldException;
@@ -98,7 +99,6 @@ public class AuthenticationService {
 
         JwtAuthResponse response = new JwtAuthResponse();
         response.setEmailVerified(false);
-        response.setEmailVerificationToken(verificationToken.getToken());
         return response;
     }
 
@@ -118,8 +118,10 @@ public class AuthenticationService {
             return null;
         }
 
-        return createToken(usuario.get(), AccountTokenType.PASSWORD_RESET,
-                LocalDateTime.now().plusMinutes(passwordResetMinutes)).getToken();
+        AccountToken resetToken = createToken(usuario.get(), AccountTokenType.PASSWORD_RESET,
+                LocalDateTime.now().plusMinutes(passwordResetMinutes));
+        eventPublisher.publishEvent(new PasswordResetRequestedEvent(this, usuario.get(), resetToken.getToken()));
+        return resetToken.getToken();
     }
 
     public void resetPassword(String token, String newPassword) {

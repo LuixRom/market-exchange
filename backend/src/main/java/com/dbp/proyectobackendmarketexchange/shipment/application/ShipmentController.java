@@ -32,6 +32,11 @@ public class ShipmentController {
         return shipmentService.getShipmentById(id);
     }
 
+    @GetMapping("/trade-proposal/{tradeProposalId}")
+    public ShipmentResponseDto getShipmentByTradeProposalId(@PathVariable Long tradeProposalId) {
+        return shipmentService.getShipmentByTradeProposalId(tradeProposalId);
+    }
+
     // Editar direcciones únicamente — ya no acepta ni aplica "status".
     @PutMapping("/{id}")
     public ShipmentResponseDto updateAddresses(@PathVariable Long id, @Valid @RequestBody ShipmentAddressUpdateDto dto) {
@@ -71,3 +76,4 @@ public class ShipmentController {
         return ResponseEntity.noContent().build();
     }
 }
+
