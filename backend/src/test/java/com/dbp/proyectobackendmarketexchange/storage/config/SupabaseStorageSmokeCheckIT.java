@@ -25,9 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * SupabaseStorageErrors.isObjectNotFound(), que exists()/retrieve()/delete() usan en
  * producción).
  *
- * Dos barreras contra ejecución accidental: el nombre de la clase no matchea los patrones
- * por defecto de Surefire (Test*.java, *Test.java, *Tests.java, *TestCase.java) así que
- * "mvn test"/CI ni la descubre, y además está deshabilitada salvo que se exporte
+ * Dos barreras contra ejecución accidental: el sufijo "IT" es el patrón de integration test
+ * que recoge maven-failsafe-plugin (fase integration-test/verify), no maven-surefire-plugin
+ * (fase test) -este proyecto no tiene failsafe configurado en pom.xml, así que ni "mvn test"
+ * ni "mvn verify" la descubren hoy-, y además está deshabilitada salvo que se exporte
  * explícitamente RUN_SUPABASE_SMOKE_TEST=true.
  *
  * Requiere SUPABASE_URL, SUPABASE_SECRET_KEY y SUPABASE_STORAGE_BUCKET ya exportadas en el
@@ -38,10 +39,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * Ejecutar (PowerShell), desde backend/:
  *   $env:RUN_SUPABASE_SMOKE_TEST = "true"
- *   .\mvnw.cmd test "-Dtest=SupabaseStorageSmokeCheck#verifyFullStorageServiceLifecycle"
+ *   .\mvnw.cmd test "-Dtest=SupabaseStorageSmokeCheckIT#verifyFullStorageServiceLifecycle"
  */
 @EnabledIfEnvironmentVariable(named = "RUN_SUPABASE_SMOKE_TEST", matches = "true")
-class SupabaseStorageSmokeCheck {
+class SupabaseStorageSmokeCheckIT {
 
     private static final byte[] SMOKE_BYTES = {
             (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0,

@@ -48,7 +48,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "app.seed.enabled=false"
+        properties = {
+                "app.seed.enabled=false",
+                "jwt.secret=test-only-secret-not-real"
+        }
 )
 class TradeProposalConcurrencyTest extends AbstractIntegrationTest {
 
@@ -76,8 +79,8 @@ class TradeProposalConcurrencyTest extends AbstractIntegrationTest {
     @Test
     void twoCompetingAccepts_exactlyOneWinsAndTheOtherIsCancelled() throws Exception {
         // Este test hace commits reales (no es @DataJpaTest, no hay rollback) contra el
-        // mismo contenedor Postgres compartido con los tests @DataJpaTest -por eso todo
-        // lo que crea se borra explícitamente al final, para no contaminar los conteos
+        // mismo contenedor Postgres compartido con los tests @DataJpaTest -por eso cada
+        // cosa que crea se borra explícitamente al final, para no contaminar los conteos
         // de otros tests (p.ej. TradeProposalRepositoryTest#testFindByStatus).
         Category category = categoryRepository.save(buildCategory());
 

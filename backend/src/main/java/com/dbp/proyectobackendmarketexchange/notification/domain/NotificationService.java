@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,13 +21,16 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UsuarioRepository usuarioRepository;
     private final RealtimeMessagingService realtimeMessagingService;
+    private final Clock clock;
 
     public NotificationService(NotificationRepository notificationRepository,
                                UsuarioRepository usuarioRepository,
-                               RealtimeMessagingService realtimeMessagingService) {
+                               RealtimeMessagingService realtimeMessagingService,
+                               Clock clock) {
         this.notificationRepository = notificationRepository;
         this.usuarioRepository = usuarioRepository;
         this.realtimeMessagingService = realtimeMessagingService;
+        this.clock = clock;
     }
 
     public Notification create(Usuario recipient, String type, String title, String message, Long tradeProposalId, Long itemId) {
@@ -58,7 +62,7 @@ public class NotificationService {
             throw new ForbiddenOperationException("No tienes permiso sobre esta notificacion");
         }
         notification.setReadFlag(true);
-        notification.setReadAt(LocalDateTime.now());
+        notification.setReadAt(LocalDateTime.now(clock));
         return mapToDto(notificationRepository.save(notification));
     }
 

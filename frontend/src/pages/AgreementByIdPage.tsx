@@ -114,7 +114,7 @@ export default function AgreementByIdPage() {
 
     useEffect(() => {
         const loadImages = async () => {
-            const accessToken = localStorage.getItem("accessToken");
+            const accessToken = sessionStorage.getItem("accessToken");
             if (!accessToken) return;
 
             const entries = [offeredItem, requestedItem].filter(Boolean) as ItemResponse[];
@@ -141,12 +141,14 @@ export default function AgreementByIdPage() {
 
         try {
             setSaving(true);
-            const updated =
-                action === "accept"
-                    ? await Agreement.acceptAgreement(trade.id)
-                    : action === "reject"
-                        ? await Agreement.rejectAgreement(trade.id)
-                        : await Agreement.cancelAgreement(trade.id);
+            let updated: AgreementResponse;
+            if (action === "accept") {
+                updated = await Agreement.acceptAgreement(trade.id);
+            } else if (action === "reject") {
+                updated = await Agreement.rejectAgreement(trade.id);
+            } else {
+                updated = await Agreement.cancelAgreement(trade.id);
+            }
             setTrade(updated);
             toast({ title: "Tradeo actualizado", variant: "success" });
         } catch (error) {

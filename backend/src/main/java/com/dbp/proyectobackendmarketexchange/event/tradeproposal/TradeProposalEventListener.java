@@ -75,6 +75,17 @@ public class TradeProposalEventListener {
         context.setVariable("offeredItemName", tradeProposal.getOfferedItem().getName());
         context.setVariable("requestedItemName", tradeProposal.getRequestedItem().getName());
 
+        String offeredCategory = (tradeProposal.getOfferedItem().getCategory() != null)
+                ? tradeProposal.getOfferedItem().getCategory().getName()
+                : "General";
+        String requestedCategory = (tradeProposal.getRequestedItem().getCategory() != null)
+                ? tradeProposal.getRequestedItem().getCategory().getName()
+                : "General";
+
+        context.setVariable("offeredCategoryName", offeredCategory);
+        context.setVariable("requestedCategoryName", requestedCategory);
+        context.setVariable("myRequestsUrl", "http://localhost:5173/dashboard/cuenta?tab=pending");
+
         // Procesar la plantilla HTML con Thymeleaf
         String htmlContent = templateEngine.process(templateName, context);
 

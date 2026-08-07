@@ -13,13 +13,13 @@ import com.dbp.proyectobackendmarketexchange.usuario.domain.UsuarioService;
 import com.dbp.proyectobackendmarketexchange.usuario.infrastructure.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Clock;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,6 +56,7 @@ class AuthServiceTest {
                 jwtService,
                 passwordEncoder,
                 eventPublisher,
+                Clock.systemDefaultZone(),
                 24,
                 30,
                 14
@@ -98,8 +99,8 @@ class AuthServiceTest {
 
         when(userRepository.findByEmail(loginRequest.getUsername())).thenReturn(Optional.empty());
 
-        // Verificar que se lanza la excepción de UsernameNotFoundException
-        assertThrows(UsernameNotFoundException.class, () -> authenticationService.signin(loginRequest));
+        // Verificar que se lanza la excepción de BadCredentialsException
+        assertThrows(BadCredentialsException.class, () -> authenticationService.signin(loginRequest));
 
         verify(userRepository, times(1)).findByEmail(loginRequest.getUsername());
         verify(jwtService, never()).generateToken(any(Usuario.class));
@@ -120,8 +121,8 @@ class AuthServiceTest {
         when(userRepository.findByEmail(loginRequest.getUsername())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())).thenReturn(false);
 
-        // Verificar que se lanza la excepción de IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> authenticationService.signin(loginRequest));
+        // Verificar que se lanza la excepción de BadCredentialsException
+        assertThrows(BadCredentialsException.class, () -> authenticationService.signin(loginRequest));
 
         verify(userRepository, times(1)).findByEmail(loginRequest.getUsername());
         verify(jwtService, never()).generateToken(any(Usuario.class));
@@ -148,7 +149,6 @@ class AuthServiceTest {
         assertNotNull(response);
         assertNull(response.getToken());
         assertFalse(response.isEmailVerified());
-        assertNotNull(response.getEmailVerificationToken());
         verify(userRepository, times(1)).save(any(Usuario.class));
         verify(accountTokenRepository, times(1)).save(any(AccountToken.class));
         verify(eventPublisher, times(1)).publishEvent(any()); // Verifica que se publicaron eventos

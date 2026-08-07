@@ -32,7 +32,7 @@ export default function UserFavorites() {
 
     useEffect(() => {
         async function loadImages() {
-            const accessToken = localStorage.getItem("accessToken");
+            const accessToken = sessionStorage.getItem("accessToken");
             if (!accessToken || items.length === 0) return;
 
             const results = await Promise.all(

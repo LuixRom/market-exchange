@@ -11,7 +11,7 @@ type ReportButtonProps = {
     label?: string;
 };
 
-export default function ReportButton({ targetType, targetId, label = "Reportar" }: ReportButtonProps) {
+export default function ReportButton({ targetType, targetId, label = "Reportar" }: Readonly<ReportButtonProps>) {
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [reason, setReason] = useState("");

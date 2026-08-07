@@ -21,16 +21,11 @@ import {
 } from "react-icons/fa";
 
 type ItemFormProps = {
-  initialData: {
-    name: string;
-    description: string;
-    condition: "NEW" | "USED";
-  };
   onSubmitSuccess: (response: ItemResponse) => void;
   onSubmitError: (error: unknown) => void;
 };
 
-export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormProps) {
+export default function ItemForm({ onSubmitSuccess, onSubmitError }: Readonly<ItemFormProps>) {
   const navigate = useNavigate();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -143,8 +138,8 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
       formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
       formDataToSend.append("condition", formData.condition);
-      formDataToSend.append("category_id", selectedCategory.toString());
-      formDataToSend.append("user_id", userId.toString());
+      formDataToSend.append("categoryId", selectedCategory.toString());
+      formDataToSend.append("userId", userId.toString());
       images.forEach((file) => formDataToSend.append("images", file));
 
       const response = await item.createItem(formDataToSend);
@@ -364,7 +359,7 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
                 <FaImage size={16} />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-bold text-gray-800 mb-2">
+                <label htmlFor="images" className="block text-sm font-bold text-gray-800 mb-2">
                   Subir imágenes <span className="text-danger">*</span>
                 </label>
 
@@ -372,6 +367,7 @@ export default function ItemForm({ onSubmitSuccess, onSubmitError }: ItemFormPro
                   {/* Dropzone de arrastrar/seleccionar archivo */}
                   <div className="md:col-span-7 border-2 border-dashed border-primary/30 rounded-2xl p-5 text-center hover:bg-primary/5 transition-all relative flex flex-col items-center justify-center min-h-[140px] group cursor-pointer">
                     <input
+                      id="images"
                       type="file"
                       accept="image/*"
                       multiple

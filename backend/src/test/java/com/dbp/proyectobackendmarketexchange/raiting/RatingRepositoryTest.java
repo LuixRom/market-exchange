@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public class RatingRepositoryTest extends AbstractContainerBaseTest {
+class RatingRepositoryTest extends AbstractContainerBaseTest {
 
     @Autowired
     private RatingRepository ratingRepository;
@@ -41,7 +41,7 @@ public class RatingRepositoryTest extends AbstractContainerBaseTest {
     private TradeProposal tradeProposal;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         Category category = new Category();
         category.setName("Categoria de prueba");
         entityManager.persist(category);
@@ -102,7 +102,7 @@ public class RatingRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testCreateRating_LinkedToTradeProposal() {
+    void testCreateRating_LinkedToTradeProposal() {
         Rating rating = ratingRepository.save(buildRating(proposer, receiver, 5));
 
         Optional<Rating> found = ratingRepository.findById(rating.getId());
@@ -114,7 +114,7 @@ public class RatingRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testBothPartiesCanRateEachOther() {
+    void testBothPartiesCanRateEachOther() {
         ratingRepository.save(buildRating(proposer, receiver, 5));
         ratingRepository.save(buildRating(receiver, proposer, 4));
 
@@ -123,19 +123,20 @@ public class RatingRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testDuplicateRating_ViolatesUniqueConstraint() {
+    void testDuplicateRating_ViolatesUniqueConstraint() {
         entityManager.persistAndFlush(buildRating(proposer, receiver, 5));
 
         // Se pasa por el repositorio (bean @Repository) y no por TestEntityManager
         // directamente, para que la traducción de excepciones de Spring convierta la
         // ConstraintViolationException nativa de Hibernate en DataIntegrityViolationException.
+        Rating duplicate = buildRating(proposer, receiver, 3);
         assertThrows(DataIntegrityViolationException.class,
-                () -> ratingRepository.saveAndFlush(buildRating(proposer, receiver, 3)));
+                () -> ratingRepository.saveAndFlush(duplicate));
     }
 
     @Test
     @Transactional
-    public void testScoreOutOfRange_RejectedByBeanValidation() {
+    void testScoreOutOfRange_RejectedByBeanValidation() {
         Rating invalid = buildRating(proposer, receiver, 6);
 
         assertThrows(ConstraintViolationException.class, () -> entityManager.persistAndFlush(invalid));
@@ -143,7 +144,7 @@ public class RatingRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testAverageScoreAndCount() {
+    void testAverageScoreAndCount() {
         entityManager.persistAndFlush(buildRating(proposer, receiver, 5));
 
         Usuario anotherReviewer = buildUsuario("otro@example.com");

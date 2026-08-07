@@ -18,7 +18,7 @@ const statusLabels: Record<AgreementStatus, string> = {
     COMPLETED: "Completado",
 };
 
-export default function TradeCard({ trade, onClick, showState = true, actions }: TradeCardProps) {
+export default function TradeCard({ trade, onClick, showState = true, actions }: Readonly<TradeCardProps>) {
     return (
         <Card
             onClick={onClick}

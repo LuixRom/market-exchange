@@ -23,9 +23,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ShipmentService {
@@ -36,25 +36,28 @@ public class ShipmentService {
     private final AuthorizationUtils authorizationUtils;
     private final NotificationService notificationService;
     private final UsuarioRepository usuarioRepository;
+    private final Clock clock;
 
     public ShipmentService(ShipmentRepository shipmentRepository,
                            TradeProposalRepository tradeProposalRepository,
                            ItemRepository itemRepository,
                            AuthorizationUtils authorizationUtils,
                            NotificationService notificationService,
-                           UsuarioRepository usuarioRepository) {
+                           UsuarioRepository usuarioRepository,
+                           Clock clock) {
         this.shipmentRepository = shipmentRepository;
         this.tradeProposalRepository = tradeProposalRepository;
         this.itemRepository = itemRepository;
         this.authorizationUtils = authorizationUtils;
         this.notificationService = notificationService;
         this.usuarioRepository = usuarioRepository;
+        this.clock = clock;
     }
 
     public List<ShipmentResponseDto> getAllShipments() {
         return shipmentRepository.findAll().stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void createShipmentForTradeProposal(TradeProposal tradeProposal) {
@@ -69,7 +72,7 @@ public class ShipmentService {
         Shipment shipment = new Shipment();
         shipment.setInitiatorAddress(tradeProposal.getProposer().getAddress());
         shipment.setReceiveAddress(tradeProposal.getReceiver().getAddress());
-        shipment.setDeliveryDate(LocalDateTime.now().plusDays(7));
+        shipment.setDeliveryDate(LocalDateTime.now(clock).plusDays(7));
         shipment.setTradeProposal(tradeProposal);
         shipment.setStatus(ShipmentStatus.PENDING);
         shipment.setMethod(ShipmentMethod.EXTERNAL_SHIPPING);
@@ -133,7 +136,7 @@ public class ShipmentService {
         }
 
         shipment.setStatus(ShipmentStatus.PREPARING);
-        shipment.setPreparedAt(LocalDateTime.now());
+        shipment.setPreparedAt(LocalDateTime.now(clock));
         Shipment saved = shipmentRepository.save(shipment);
         notifyOtherParticipant(saved, currentUser(), "SHIPMENT_PREPARING", "Entrega en preparacion",
                 "La otra parte esta preparando la entrega");
@@ -152,7 +155,7 @@ public class ShipmentService {
         }
 
         shipment.setStatus(ShipmentStatus.IN_TRANSIT);
-        shipment.setShippedAt(LocalDateTime.now());
+        shipment.setShippedAt(LocalDateTime.now(clock));
         if (trackingCode != null && !trackingCode.isBlank()) {
             shipment.setTrackingCode(trackingCode);
         }
@@ -169,11 +172,15 @@ public class ShipmentService {
 
     @Transactional
     public ShipmentResponseDto deliverShipment(Long id) {
-        return confirmDelivery(id);
+        return doConfirmDelivery(id);
     }
 
     @Transactional
     public ShipmentResponseDto confirmDelivery(Long id) {
+        return doConfirmDelivery(id);
+    }
+
+    private ShipmentResponseDto doConfirmDelivery(Long id) {
         Shipment shipment = loadShipment(id);
         Usuario current = currentUser();
         authorizeParticipantOrAdmin(shipment);
@@ -192,13 +199,13 @@ public class ShipmentService {
 
         boolean proposer = shipment.getTradeProposal().getProposer().getId().equals(current.getId());
         if (proposer && shipment.getProposerDeliveryConfirmedAt() == null) {
-            shipment.setProposerDeliveryConfirmedAt(LocalDateTime.now());
+            shipment.setProposerDeliveryConfirmedAt(LocalDateTime.now(clock));
         } else if (!proposer && shipment.getReceiverDeliveryConfirmedAt() == null) {
-            shipment.setReceiverDeliveryConfirmedAt(LocalDateTime.now());
+            shipment.setReceiverDeliveryConfirmedAt(LocalDateTime.now(clock));
         }
 
         if (shipment.getDeliveredAt() == null) {
-            shipment.setDeliveredAt(LocalDateTime.now());
+            shipment.setDeliveredAt(LocalDateTime.now(clock));
         }
         shipment.setStatus(ShipmentStatus.DELIVERED);
 
@@ -224,7 +231,7 @@ public class ShipmentService {
         }
 
         shipment.setStatus(ShipmentStatus.CANCELLED);
-        shipment.setCancelledAt(LocalDateTime.now());
+        shipment.setCancelledAt(LocalDateTime.now(clock));
         Shipment saved = shipmentRepository.save(shipment);
         notifyOtherParticipant(saved, currentUser(), "SHIPMENT_CANCELLED", "Entrega cancelada",
                 "La entrega del intercambio fue cancelada");

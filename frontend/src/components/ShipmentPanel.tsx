@@ -50,7 +50,7 @@ function formatDate(value?: string | null) {
     });
 }
 
-export default function ShipmentPanel({ trade, currentUserId, onTradeCompleted }: ShipmentPanelProps) {
+export default function ShipmentPanel({ trade, currentUserId, onTradeCompleted }: Readonly<ShipmentPanelProps>) {
     const { toast } = useToast();
     const [shipment, setShipment] = useState<ShipmentResponse | null>(null);
     const [loading, setLoading] = useState(true);

@@ -9,8 +9,6 @@ import com.dbp.proyectobackendmarketexchange.config.JwtService;
 import com.dbp.proyectobackendmarketexchange.usuario.domain.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)  // Deshabilitar filtros de seguridad en pruebas
-public class AuthControllerTest {
+class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -44,12 +42,12 @@ public class AuthControllerTest {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testRegisterSuccess() throws Exception {
+    void testRegisterSuccess() throws Exception {
         // Preparar datos
         RegisterRequest registerRequest = new RegisterRequest();
         registerRequest.setFirstName("Test");
@@ -77,7 +75,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    public void testLoginSuccess() throws Exception {
+    void testLoginSuccess() throws Exception {
         // Preparar datos
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("user@example.com");

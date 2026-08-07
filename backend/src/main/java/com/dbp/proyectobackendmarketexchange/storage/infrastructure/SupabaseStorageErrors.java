@@ -14,7 +14,7 @@ import org.springframework.web.client.HttpClientErrorException;
  * con mirar solo el status HTTP-.
  *
  * Deliberadamente NO usa un ObjectMapper inyectado desde Spring: SupabaseStorageService se
- * construye directamente (sin Spring) tanto en los tests como en SupabaseStorageSmokeCheck
+ * construye directamente (sin Spring) tanto en los tests como en SupabaseStorageSmokeCheckIT
  * (bloque 8, investigación manual que no se debe tocar en este bloque) -agregar un tercer
  * parámetro al constructor rompería la compilación de ese archivo y obligaría a tocar los
  * ~9 call-sites de test que no tienen relación con esta funcionalidad-. Un ObjectMapper
@@ -45,7 +45,7 @@ final class SupabaseStorageErrors {
 
     private static boolean hasNotFoundBody(HttpClientErrorException exception) {
         String body = exception.getResponseBodyAsString();
-        if (body == null || body.isBlank()) {
+        if (body.isBlank()) {
             return false;
         }
         JsonNode json;

@@ -3,6 +3,7 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useMemo,
   useState,
 } from "react";
 import * as RadixToast from "@radix-ui/react-toast";
@@ -36,7 +37,7 @@ const variantStyles: Record<ToastVariant, string> = {
 
 let nextId = 1;
 
-export function ToastProvider({ children }: { children: ReactNode }) {
+export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const toast = useCallback<ToastContextValue["toast"]>(
@@ -51,8 +52,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const contextValue = useMemo(() => ({ toast }), [toast]);
+
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={contextValue}>
       <RadixToast.Provider swipeDirection="right" duration={4000}>
         {children}
         <AnimatePresence>

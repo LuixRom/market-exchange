@@ -19,7 +19,7 @@ export function Dialog({
   description,
   children,
   footer,
-}: DialogProps) {
+}: Readonly<DialogProps>) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>

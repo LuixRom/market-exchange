@@ -1,14 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
 import NotFound from './pages/NotFound';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
 import { AuthProvider } from './context/AuthProvider';
-import { Outlet } from "react-router-dom";
 import Navbar from './components/Navbar';
 import { PageTransition } from './components/PageTransition';
 import { ToastProvider } from './components/ui/Toast';
@@ -28,6 +27,7 @@ import ItemDetailPage from './pages/ItemDetailPage';
 import AdminItemModerationPage from './pages/AdminItemModerationPage';
 import AdminReportsPage from './pages/AdminReportsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AllItemsPage from './pages/AllItemsPage';
 
 //Vamos a crear un router y vamos a llamar a createBrowserRouter
 const MainLayout = () => (
@@ -52,7 +52,7 @@ const MainLayout = () => (
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />, // MainLayout envuelve todo
+    element: <MainLayout />, // MainLayout envuelve la aplicación completa
     children: [
       {
         path: '', // Ruta raíz "/"
@@ -85,6 +85,10 @@ const router = createBrowserRouter([
           {
             path: '', // Ruta raíz del dashboard "/dashboard"
             element: <Dashboard />,
+          },
+          {
+            path: 'explore', // Ruta "/dashboard/explore"
+            element: <AllItemsPage />,
           },
           {
             path: 'category',

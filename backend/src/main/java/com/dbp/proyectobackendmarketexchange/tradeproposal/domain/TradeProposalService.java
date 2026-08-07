@@ -29,12 +29,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class TradeProposalService {
+    private static final String TRADE_PROPOSAL_NOT_FOUND = "Trade proposal not found";
+
     private final ItemRepository itemRepository;
     private final TradeProposalRepository tradeProposalRepository;
     private final ShipmentService shipmentService;
@@ -43,6 +45,7 @@ public class TradeProposalService {
     private final AuthorizationUtils authorizationUtils;
     private final NotificationService notificationService;
     private final RealtimeMessagingService realtimeMessagingService;
+    private final Clock clock;
 
     public TradeProposalService(ItemRepository itemRepository,
                                 TradeProposalRepository tradeProposalRepository,
@@ -51,7 +54,8 @@ public class TradeProposalService {
                                 ApplicationEventPublisher eventPublisher,
                                 AuthorizationUtils authorizationUtils,
                                 NotificationService notificationService,
-                                RealtimeMessagingService realtimeMessagingService) {
+                                RealtimeMessagingService realtimeMessagingService,
+                                Clock clock) {
         this.itemRepository = itemRepository;
         this.tradeProposalRepository = tradeProposalRepository;
         this.shipmentService = shipmentService;
@@ -60,6 +64,7 @@ public class TradeProposalService {
         this.authorizationUtils = authorizationUtils;
         this.notificationService = notificationService;
         this.realtimeMessagingService = realtimeMessagingService;
+        this.clock = clock;
     }
 
     public List<TradeProposalResponseDto> getAllTradeProposals() {
@@ -67,26 +72,26 @@ public class TradeProposalService {
         List<TradeProposal> proposals = current.getRole() == Role.ADMIN
                 ? tradeProposalRepository.findAll()
                 : tradeProposalRepository.findByProposerIdOrderByCreatedAtDesc(current.getId());
-        return proposals.stream().map(this::mapToResponseDto).collect(Collectors.toList());
+        return proposals.stream().map(this::mapToResponseDto).toList();
     }
 
     public List<TradeProposalResponseDto> getSentTradeProposals() {
         Usuario current = resolveCurrentUser();
         return tradeProposalRepository.findByProposerIdOrderByCreatedAtDesc(current.getId()).stream()
                 .map(this::mapToResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<TradeProposalResponseDto> getReceivedTradeProposals() {
         Usuario current = resolveCurrentUser();
         return tradeProposalRepository.findByReceiverIdOrderByCreatedAtDesc(current.getId()).stream()
                 .map(this::mapToResponseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public TradeProposalResponseDto getTradeProposalById(Long id) {
         TradeProposal tradeProposal = tradeProposalRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TRADE_PROPOSAL_NOT_FOUND));
         authorizeParticipantOrAdmin(tradeProposal);
         return mapToResponseDto(tradeProposal);
     }
@@ -146,7 +151,7 @@ public class TradeProposalService {
     @Transactional
     public TradeProposalResponseDto acceptTradeProposal(Long id) {
         TradeProposalSummary summary = tradeProposalRepository.findSummaryById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TRADE_PROPOSAL_NOT_FOUND));
         if (!authorizationUtils.isAdminOrResourceOwner(summary.getReceiverId())) {
             throw new ForbiddenOperationException("Solo el receptor o un administrador pueden aceptar esta propuesta");
         }
@@ -157,7 +162,7 @@ public class TradeProposalService {
         itemRepository.findByIdForUpdate(secondItemId).orElseThrow(() -> new ResourceNotFoundException("Item not found"));
 
         TradeProposal lockedProposal = tradeProposalRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TRADE_PROPOSAL_NOT_FOUND));
         if (lockedProposal.getStatus() != TradeStatus.PENDING) {
             throw new TradeProposalConflictException("La propuesta ya no esta en estado PENDING");
         }
@@ -188,13 +193,13 @@ public class TradeProposalService {
     @Transactional
     public TradeProposalResponseDto rejectTradeProposal(Long id) {
         TradeProposalSummary summary = tradeProposalRepository.findSummaryById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TRADE_PROPOSAL_NOT_FOUND));
         if (!authorizationUtils.isAdminOrResourceOwner(summary.getReceiverId())) {
             throw new ForbiddenOperationException("Solo el receptor o un administrador pueden rechazar esta propuesta");
         }
 
         TradeProposal lockedProposal = tradeProposalRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TRADE_PROPOSAL_NOT_FOUND));
         if (lockedProposal.getStatus() != TradeStatus.PENDING) {
             throw new TradeProposalConflictException("La propuesta ya no esta en estado PENDING");
         }
@@ -211,7 +216,7 @@ public class TradeProposalService {
     @Transactional
     public TradeProposalResponseDto cancelTradeProposal(Long id) {
         TradeProposal tradeProposal = tradeProposalRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TRADE_PROPOSAL_NOT_FOUND));
         Usuario current = resolveCurrentUser();
         if (!tradeProposal.getProposer().getId().equals(current.getId()) && current.getRole() != Role.ADMIN) {
             throw new ForbiddenOperationException("Solo el proponente o un admin pueden cancelar esta propuesta");
@@ -220,7 +225,7 @@ public class TradeProposalService {
             throw new TradeProposalConflictException("Solo se pueden cancelar propuestas PENDING");
         }
         tradeProposal.setStatus(TradeStatus.CANCELLED);
-        tradeProposal.setCancelledAt(LocalDateTime.now());
+        tradeProposal.setCancelledAt(LocalDateTime.now(clock));
         TradeProposal saved = tradeProposalRepository.save(tradeProposal);
         notificationService.create(saved.getReceiver(), "TRADE_PROPOSAL_CANCELLED", "Propuesta cancelada",
                 "Una propuesta de intercambio fue cancelada", saved.getId(), saved.getRequestedItem().getId());
@@ -231,7 +236,7 @@ public class TradeProposalService {
 
     public void deleteTradeProposal(Long id) {
         TradeProposal tradeProposal = tradeProposalRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Trade proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TRADE_PROPOSAL_NOT_FOUND));
         if (tradeProposal.getShipment() != null) {
             throw new InvalidTradeProposalException("No se puede eliminar una propuesta que ya tiene un envio asociado");
         }

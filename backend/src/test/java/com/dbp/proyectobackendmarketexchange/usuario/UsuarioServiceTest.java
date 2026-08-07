@@ -14,12 +14,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +30,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class UsuarioServiceTest {
+class UsuarioServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
@@ -44,16 +47,19 @@ public class UsuarioServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
+
     @InjectMocks
     private UsuarioService usuarioService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testRegistrarUsuarioExitosamente() {
+    void testRegistrarUsuarioExitosamente() {
         // Preparar datos
         UsuarioRequestDto requestDto = new UsuarioRequestDto();
         requestDto.setFirstname("Carlos");
@@ -90,7 +96,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testBuscarUsuarioPorIdUsuarioExistente() {
+    void testBuscarUsuarioPorIdUsuarioExistente() {
         // Preparar datos
         Usuario usuario = new Usuario();
         usuario.setId(1L);
@@ -112,7 +118,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testBuscarUsuarioPorIdNoExistente() {
+    void testBuscarUsuarioPorIdNoExistente() {
         // Simular comportamiento del repositorio
         when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -122,7 +128,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testListarUsuarios() {
+    void testListarUsuarios() {
         // Preparar datos
         Usuario usuario1 = new Usuario();
         usuario1.setId(1L);
@@ -148,7 +154,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testActualizarUsuarioExitosamente() {
+    void testActualizarUsuarioExitosamente() {
         // Preparar datos
         UsuarioRequestDto requestDto = new UsuarioRequestDto();
         requestDto.setFirstname("Carlos");
@@ -194,7 +200,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testActualizarUsuarioSinAutorizacion() {
+    void testActualizarUsuarioSinAutorizacion() {
         // Preparar datos
         UsuarioRequestDto requestDto = new UsuarioRequestDto();
         Usuario usuarioExistente = new Usuario();
@@ -210,7 +216,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testEliminarUsuarioExitosamente() {
+    void testEliminarUsuarioExitosamente() {
         // Preparar datos
         Usuario usuario = new Usuario();
         usuario.setId(1L);
@@ -227,7 +233,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testEliminarUsuarioSinAutorizacion() {
+    void testEliminarUsuarioSinAutorizacion() {
         // Preparar datos
         Usuario usuario = new Usuario();
         usuario.setId(1L);
@@ -242,7 +248,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testUserDetailsServiceUsuarioExistente() {
+    void testUserDetailsServiceUsuarioExistente() {
         // Preparar datos
         Usuario usuario = new Usuario();
         usuario.setId(1L);
@@ -260,12 +266,13 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void testUserDetailsServiceUsuarioNoExistente() {
+    void testUserDetailsServiceUsuarioNoExistente() {
         // Simular comportamiento del repositorio
         when(usuarioRepository.findByEmail("carlos@example.com")).thenReturn(Optional.empty());
 
         // Verificar que se lanza la excepción esperada
-        assertThrows(UsernameNotFoundException.class, () -> usuarioService.userDetailsService().loadUserByUsername("carlos@example.com"));
+        UserDetailsService userDetailsService = usuarioService.userDetailsService();
+        assertThrows(UsernameNotFoundException.class, () -> userDetailsService.loadUserByUsername("carlos@example.com"));
     }
 }
 

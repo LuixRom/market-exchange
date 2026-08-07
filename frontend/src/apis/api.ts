@@ -23,7 +23,7 @@ export function getApiBaseUrl(): string {
 export default class Api {
   private static _instance: Api | null = null;
 
-  private _axiosInstance: AxiosInstance;
+  private readonly _axiosInstance: AxiosInstance;
 
   private _authorization: string | null;
 
@@ -32,7 +32,7 @@ export default class Api {
   }
 
   private constructor(basePath: string, authorization: string | null) {
-    this._authorization = authorization || localStorage.getItem("accessToken") || null;
+    this._authorization = authorization || sessionStorage.getItem("accessToken") || null;
 
     this._axiosInstance = axios.create({
       baseURL: basePath,
@@ -62,7 +62,7 @@ export default class Api {
       (response) => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as RetriableAxiosRequestConfig | undefined;
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = sessionStorage.getItem("refreshToken");
         const isRefreshRequest = originalRequest?.url?.includes("/auth/refresh");
 
         if (
@@ -82,12 +82,12 @@ export default class Api {
             }>("/auth/refresh", { token: refreshToken });
 
             this._authorization = response.data.token;
-            localStorage.setItem("accessToken", response.data.token);
+            sessionStorage.setItem("accessToken", response.data.token);
             if (response.data.refreshToken) {
-              localStorage.setItem("refreshToken", response.data.refreshToken);
+              sessionStorage.setItem("refreshToken", response.data.refreshToken);
             }
             if (typeof response.data.emailVerified === "boolean") {
-              localStorage.setItem("emailVerified", String(response.data.emailVerified));
+              sessionStorage.setItem("emailVerified", String(response.data.emailVerified));
             }
 
             originalRequest.headers = {
@@ -97,23 +97,21 @@ export default class Api {
 
             return this._axiosInstance.request(originalRequest);
           } catch (refreshError) {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("emailVerified");
+            sessionStorage.removeItem("accessToken");
+            sessionStorage.removeItem("refreshToken");
+            sessionStorage.removeItem("emailVerified");
             this._authorization = null;
-            return Promise.reject(refreshError);
+            throw refreshError;
           }
         }
 
-        return Promise.reject(error);
+        throw error;
       }
     );
   }
 
   public static async getInstance() {
-    if (!this._instance) {
-      this._instance = new Api(getApiBaseUrl(), null);
-    }
+    this._instance ??= new Api(getApiBaseUrl(), null);
 
     return this._instance;
   }

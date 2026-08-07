@@ -36,6 +36,7 @@ import java.util.UUID;
 public class SupabaseStorageService implements StorageService {
 
     private static final String OBJECT_ENDPOINT = "/storage/v1/object/";
+    private static final String PATH_DELIMITER = "/";
 
     private final StorageProperties storageProperties;
     private final RestClient supabaseRestClient;
@@ -76,7 +77,7 @@ public class SupabaseStorageService implements StorageService {
         // objectKey contiene "/" a propósito -si se pasara como {objectKey} a uri(...), el
         // encoding por defecto de RestClient escaparía esas barras y rompería la ruta real
         // en Supabase-. Es seguro: bucket/directory/objectKey son siempre server-side.
-        String path = OBJECT_ENDPOINT + bucket + "/" + objectKey;
+        String path = buildObjectPath(bucket, objectKey);
 
         try {
             supabaseRestClient.post()
@@ -120,6 +121,10 @@ public class SupabaseStorageService implements StorageService {
         return value == null || value.isBlank();
     }
 
+    private static String buildObjectPath(String bucket, String key) {
+        return OBJECT_ENDPOINT + bucket + PATH_DELIMITER + key;
+    }
+
     @Override
     public byte[] retrieve(String storageKey) {
         StorageObjectKeys.validate(storageKey);
@@ -128,7 +133,7 @@ public class SupabaseStorageService implements StorageService {
         String bucket = supabase.getBucket();
         ensureConfigured(supabase, bucket);
 
-        String path = OBJECT_ENDPOINT + bucket + "/" + storageKey;
+        String path = buildObjectPath(bucket, storageKey);
 
         byte[] body;
         try {
@@ -172,7 +177,7 @@ public class SupabaseStorageService implements StorageService {
         String bucket = supabase.getBucket();
         ensureConfigured(supabase, bucket);
 
-        String path = OBJECT_ENDPOINT + bucket + "/" + storageKey;
+        String path = buildObjectPath(bucket, storageKey);
 
         try {
             // GET + Range: bytes=0-0, no HEAD: el smoke test manual (bloque 8) confirmó
@@ -206,7 +211,7 @@ public class SupabaseStorageService implements StorageService {
         String bucket = supabase.getBucket();
         ensureConfigured(supabase, bucket);
 
-        String path = OBJECT_ENDPOINT + bucket + "/" + storageKey;
+        String path = buildObjectPath(bucket, storageKey);
 
         try {
             // Una sola request: sin exists() previo, un 404 acá ya significa "objetivo

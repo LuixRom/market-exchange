@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificationExecutor<Item> {
-    List<Item> findByCategoryId(Long category_id);
-    List<Item> findByUsuarioId(Long user_id);
+    List<Item> findByCategoryId(Long categoryId);
+    List<Item> findByUsuarioId(Long userId);
     List<Item> findByCategoryIdAndStatus(Long categoryId, ItemStatus status);
     List<Item> findByUsuarioIdAndStatus(Long userId, ItemStatus status);
 

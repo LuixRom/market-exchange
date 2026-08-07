@@ -1,6 +1,7 @@
 package com.dbp.proyectobackendmarketexchange.item.dto;
 
 import com.dbp.proyectobackendmarketexchange.item.domain.Condition;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,10 +20,12 @@ public class ItemRequestDto {
     private String description;
 
     @NotNull
-    private Long category_id;
+    @JsonProperty("category_id")
+    private Long categoryId;
 
     @NotNull
-    private Long user_id;
+    @JsonProperty("user_id")
+    private Long userId;
 
     @NotNull
     private Condition condition;

@@ -13,7 +13,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class JwtService {
@@ -32,8 +33,8 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails data){
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + 1000 * 60 * 60 * 10);
+        Instant now = Instant.now();
+        Instant expiration = now.plus(10, ChronoUnit.HOURS);
 
         Algorithm algorithm = Algorithm.HMAC256(secret);
 

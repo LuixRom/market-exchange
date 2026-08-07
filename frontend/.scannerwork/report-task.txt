@@ -1,0 +1,6 @@
+projectKey=market-exchange-frontend
+serverUrl=http://localhost:9000
+serverVersion=26.8.0.126808
+dashboardUrl=http://localhost:9000/dashboard?id=market-exchange-frontend
+ceTaskId=63647f6d-fc11-4c85-8eee-a7a96dfc3866
+ceTaskUrl=http://localhost:9000/api/ce/task?id=63647f6d-fc11-4c85-8eee-a7a96dfc3866

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
@@ -14,7 +14,6 @@ import {
   FaBoxes,
   FaExchangeAlt,
   FaHourglassHalf,
-  FaChartLine,
   FaChevronRight,
   FaEllipsisV,
   FaCheckCircle,
@@ -44,24 +43,21 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const info = await usuario.getMyInfo();
-        setUserName(info.firstname);
+        const [info, items, myAgreements, pendingCatalog] = await Promise.all([
+          usuario.getMyInfo().catch(() => ({ firstname: "" })),
+          item.getMyItems().catch(() => []),
+          Agreement.getMyAgreements().catch(() => []),
+          role === "ADMIN"
+            ? item.getCatalog({ status: "PENDING_REVIEW", page: 0, size: 1 }).catch(() => ({ totalElements: 0 }))
+            : Promise.resolve(null),
+        ]);
 
-        // Obtener publicaciones del usuario
-        const items = await item.getMyItems();
+        if (info.firstname) setUserName(info.firstname);
         setUserItems(items);
-
-        // Obtener acuerdos del usuario
-        const myAgreements = await Agreement.getMyAgreements();
         setUserTrades(myAgreements);
 
-        if (role === "ADMIN") {
-          const pendingItems = await item.getCatalog({
-            status: "PENDING_REVIEW",
-            page: 0,
-            size: 1,
-          });
-          setPendingItemsCount(pendingItems.totalElements);
+        if (pendingCatalog && "totalElements" in pendingCatalog) {
+          setPendingItemsCount(pendingCatalog.totalElements);
         }
       } catch (err) {
         console.error("Error al cargar información del dashboard:", err);
@@ -73,30 +69,20 @@ export default function Dashboard() {
     fetchUserData();
   }, [role]);
 
-  // Cargar miniaturas de las publicaciones
+  // Cargar miniaturas de las publicaciones de manera progresiva
   useEffect(() => {
-    const loadImages = async () => {
-      const accessToken = localStorage.getItem("accessToken");
-      if (!accessToken || userItems.length === 0) return;
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (!accessToken || userItems.length === 0) return;
 
-      const promises = userItems.map(async (itm) => {
-        try {
-          const url = await fetchItemImage(itm, accessToken);
-          return { id: itm.id, url };
-        } catch {
-          return { id: itm.id, url: "/default-placeholder.png" };
-        }
-      });
-
-      const results = await Promise.all(promises);
-      const map: { [key: number]: string } = {};
-      results.forEach((r) => {
-        map[r.id] = r.url;
-      });
-      setImageUrls(map);
-    };
-
-    loadImages();
+    userItems.forEach((itm) => {
+      fetchItemImage(itm, accessToken)
+        .then((url) => {
+          setImageUrls((prev) => ({ ...prev, [itm.id]: url }));
+        })
+        .catch(() => {
+          setImageUrls((prev) => ({ ...prev, [itm.id]: "/default-placeholder.png" }));
+        });
+    });
   }, [userItems]);
 
   // Conteos calculados para las métricas
@@ -107,7 +93,6 @@ export default function Dashboard() {
   const pendingTradesCount = userTrades.filter(
     (t) => t.status === "PENDING"
   ).length;
-  const impactPoints = (publishedCount * 5) + (completedTradesCount * 10) + 3;
 
   // Construcción de lista de actividad reciente
   const activities: ActivityItem[] = [];
@@ -172,6 +157,127 @@ export default function Dashboard() {
     );
   };
 
+  let myItemsContent: ReactNode;
+  if (loading) {
+    myItemsContent = (
+      <div className="py-12 text-center text-gray-400 text-sm font-medium">
+        Cargando publicaciones...
+      </div>
+    );
+  } else if (userItems.length > 0) {
+    myItemsContent = (
+      <div className="divide-y divide-gray-50">
+        {userItems.slice(0, 4).map((itm) => (
+          <div
+            key={itm.id}
+            className="py-3.5 flex items-center justify-between gap-4 hover:bg-gray-50/60 px-2 rounded-2xl transition-colors"
+          >
+            <div className="flex items-center gap-3.5 overflow-hidden">
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 flex-shrink-0 relative ${!imageUrls[itm.id] ? "animate-pulse" : ""}`}>
+                <img
+                  src={imageUrls[itm.id] || "/default-placeholder.png"}
+                  alt={itm.name}
+                  className="w-full h-full object-cover transition-opacity duration-300"
+                  loading="lazy"
+                />
+              </div>
+              <div className="overflow-hidden">
+                <h4 className="text-sm font-bold text-gray-900 truncate">
+                  {itm.name}
+                </h4>
+                <p className="text-xs text-gray-400 font-medium truncate">
+                  {itm.categoryName || "General"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {getStatusBadge(itm.status)}
+              <button
+                type="button"
+                aria-label="Opciones"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg transition-colors"
+              >
+                <FaEllipsisV size={13} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  } else {
+    myItemsContent = (
+      <div className="py-10 text-center text-gray-500 space-y-3">
+        <p className="text-sm">No tienes publicaciones activas aún.</p>
+        <Button asChild size="sm" className="rounded-full">
+          <Link to="/dashboard/item/create">+ Crear primera publicación</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  let activityContent: ReactNode;
+  if (loading) {
+    activityContent = (
+      <div className="py-12 text-center text-gray-400 text-sm font-medium">
+        Cargando actividad...
+      </div>
+    );
+  } else if (activities.length > 0) {
+    activityContent = (
+      <div className="space-y-3">
+        {activities.slice(0, 4).map((act) => (
+          <div
+            key={act.id}
+            className="p-3 rounded-2xl bg-gray-50/50 border border-gray-100/80 flex items-center justify-between gap-3 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3 overflow-hidden">
+              {act.type === "trade_completed" && (
+                <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                  <FaCheckCircle size={15} />
+                </div>
+              )}
+              {act.type === "trade_pending" && (
+                <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                  <FaClock size={15} />
+                </div>
+              )}
+              {act.type === "trade_rejected" && (
+                <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+                  <FaTimesCircle size={15} />
+                </div>
+              )}
+              {act.type === "item_created" && (
+                <div className="w-9 h-9 rounded-full bg-purple-100 text-primary flex items-center justify-center flex-shrink-0">
+                  <FaPlus size={13} />
+                </div>
+              )}
+
+              <div className="overflow-hidden">
+                <h4 className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                  {act.title}
+                </h4>
+                <p className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">
+                  {act.subtitle}
+                </p>
+              </div>
+            </div>
+
+            <span className="text-[11px] font-semibold text-gray-400 whitespace-nowrap flex-shrink-0">
+              {act.date}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  } else {
+    activityContent = (
+      <div className="py-10 text-center text-gray-500 text-sm font-medium">
+        No hay actividad reciente registrada.
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className="w-full max-w-container mx-auto px-4 sm:px-6 py-8 space-y-8"
@@ -205,6 +311,11 @@ export default function Dashboard() {
               </Button>
             )}
             <Button asChild variant="secondary" size="md" className="rounded-full px-6 shadow-sm font-bold border-primary/30 text-primary hover:bg-primary/5">
+              <Link to="/dashboard/explore">
+                🔍 Explorar marketplace
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="md" className="rounded-full px-6 shadow-sm font-bold text-gray-700 hover:bg-gray-100">
               <Link to="/dashboard/category">
                 Ver categorías
               </Link>
@@ -224,15 +335,16 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* 2. Tarjetas de Resumen de Métricas (4 Columnas) */}
+      {/* 2. Tarjetas de Resumen de Métricas (3 Columnas) */}
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
         variants={slideUp}
       >
         {/* Card 1: Mis Ítems Publicados */}
-        <div
+        <button
+          type="button"
           onClick={() => navigate(role === "ADMIN" ? "/dashboard/admin/items" : "/dashboard/cuenta?tab=items")}
-          className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+          className="w-full text-left bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-purple-100/70 text-primary rounded-2xl flex items-center justify-center font-bold text-xl flex-shrink-0">
@@ -253,12 +365,13 @@ export default function Dashboard() {
           <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
             <FaChevronRight size={12} />
           </div>
-        </div>
+        </button>
 
         {/* Card 2: Tradeos Realizados */}
-        <div
+        <button
+          type="button"
           onClick={() => navigate("/dashboard/cuenta?tab=trades")}
-          className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+          className="w-full text-left bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-100/70 text-emerald-600 rounded-2xl flex items-center justify-center font-bold text-xl flex-shrink-0">
@@ -279,12 +392,13 @@ export default function Dashboard() {
           <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-emerald-600 group-hover:text-white transition-all flex-shrink-0">
             <FaChevronRight size={12} />
           </div>
-        </div>
+        </button>
 
         {/* Card 3: Tradeos Por Realizar */}
-        <div
+        <button
+          type="button"
           onClick={() => navigate("/dashboard/cuenta?tab=pending")}
-          className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
+          className="w-full text-left bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-amber-100/70 text-amber-600 rounded-2xl flex items-center justify-center font-bold text-xl flex-shrink-0">
@@ -305,30 +419,7 @@ export default function Dashboard() {
           <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-amber-600 group-hover:text-white transition-all flex-shrink-0">
             <FaChevronRight size={12} />
           </div>
-        </div>
-
-        {/* Card 4: Puntos de Impacto */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group cursor-pointer">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-100/70 text-primary rounded-2xl flex items-center justify-center font-bold text-xl flex-shrink-0">
-              <FaChartLine />
-            </div>
-            <div>
-              <span className="block text-2xl font-extrabold text-gray-900 leading-none">
-                {impactPoints}
-              </span>
-              <span className="block text-xs font-bold text-gray-900 mt-1">
-                Puntos de impacto
-              </span>
-              <span className="block text-[11px] text-gray-400 font-medium">
-                Gracias por hacer la diferencia
-              </span>
-            </div>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
-            <FaChevronRight size={12} />
-          </div>
-        </div>
+        </button>
       </motion.div>
 
       {/* 3. Grid Principal de 2 Columnas */}
@@ -363,54 +454,7 @@ export default function Dashboard() {
             </div>
 
             {/* Lista de ítems */}
-            {loading ? (
-              <div className="py-12 text-center text-gray-400 text-sm font-medium">
-                Cargando publicaciones...
-              </div>
-            ) : userItems.length > 0 ? (
-              <div className="divide-y divide-gray-50">
-                {userItems.slice(0, 4).map((itm) => (
-                  <div
-                    key={itm.id}
-                    className="py-3.5 flex items-center justify-between gap-4 hover:bg-gray-50/60 px-2 rounded-2xl transition-colors"
-                  >
-                    <div className="flex items-center gap-3.5 overflow-hidden">
-                      <img
-                        src={imageUrls[itm.id] || "/default-placeholder.png"}
-                        alt={itm.name}
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover bg-gray-100 border border-gray-100 flex-shrink-0"
-                      />
-                      <div className="overflow-hidden">
-                        <h4 className="text-sm font-bold text-gray-900 truncate">
-                          {itm.name}
-                        </h4>
-                        <p className="text-xs text-gray-400 font-medium truncate">
-                          {itm.categoryName || "General"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      {getStatusBadge(itm.status)}
-                      <button
-                        type="button"
-                        aria-label="Opciones"
-                        className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg transition-colors"
-                      >
-                        <FaEllipsisV size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-10 text-center text-gray-500 space-y-3">
-                <p className="text-sm">No tienes publicaciones activas aún.</p>
-                <Button asChild size="sm" className="rounded-full">
-                  <Link to="/dashboard/item/create">+ Crear primera publicación</Link>
-                </Button>
-              </div>
-            )}
+            {myItemsContent}
           </div>
 
           <div className="pt-4 border-t border-gray-100 text-center mt-4">
@@ -446,60 +490,7 @@ export default function Dashboard() {
             </div>
 
             {/* Lista de actividades */}
-            {loading ? (
-              <div className="py-12 text-center text-gray-400 text-sm font-medium">
-                Cargando actividad...
-              </div>
-            ) : activities.length > 0 ? (
-              <div className="space-y-3">
-                {activities.slice(0, 4).map((act) => (
-                  <div
-                    key={act.id}
-                    className="p-3 rounded-2xl bg-gray-50/50 border border-gray-100/80 flex items-center justify-between gap-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      {act.type === "trade_completed" && (
-                        <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                          <FaCheckCircle size={15} />
-                        </div>
-                      )}
-                      {act.type === "trade_pending" && (
-                        <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-                          <FaClock size={15} />
-                        </div>
-                      )}
-                      {act.type === "trade_rejected" && (
-                        <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
-                          <FaTimesCircle size={15} />
-                        </div>
-                      )}
-                      {act.type === "item_created" && (
-                        <div className="w-9 h-9 rounded-full bg-purple-100 text-primary flex items-center justify-center flex-shrink-0">
-                          <FaPlus size={13} />
-                        </div>
-                      )}
-
-                      <div className="overflow-hidden">
-                        <h4 className="text-xs sm:text-sm font-bold text-gray-900 truncate">
-                          {act.title}
-                        </h4>
-                        <p className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">
-                          {act.subtitle}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span className="text-[11px] font-semibold text-gray-400 whitespace-nowrap flex-shrink-0">
-                      {act.date}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-10 text-center text-gray-500 text-sm font-medium">
-                No hay actividad reciente registrada.
-              </div>
-            )}
+            {activityContent}
           </div>
 
           <div className="pt-4 border-t border-gray-100 text-center mt-4">

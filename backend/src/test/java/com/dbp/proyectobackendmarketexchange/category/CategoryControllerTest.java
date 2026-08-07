@@ -20,7 +20,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 class CategoryControllerTest {
 
@@ -33,13 +32,13 @@ class CategoryControllerTest {
     private CategoryController categoryController;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(categoryController).build();
     }
 
     @Test
-    public void testCreateCategory() throws Exception {
+    void testCreateCategory() throws Exception {
         CategoryRequestDto categoryRequestDto = new CategoryRequestDto();
         categoryRequestDto.setName("Electronics");
 
@@ -60,7 +59,7 @@ class CategoryControllerTest {
     }
 
     @Test
-    public void testGetCategoryById() throws Exception {
+    void testGetCategoryById() throws Exception {
         CategoryResponseDto categoryResponseDto = new CategoryResponseDto();
         categoryResponseDto.setId(1L);
         categoryResponseDto.setName("Electronics");
@@ -76,7 +75,7 @@ class CategoryControllerTest {
     }
 
     @Test
-    public void testGetAllCategories() throws Exception {
+    void testGetAllCategories() throws Exception {
         CategoryResponseDto category1 = new CategoryResponseDto();
         category1.setId(1L);
         category1.setName("Electronics");
@@ -101,7 +100,7 @@ class CategoryControllerTest {
     }
 
     @Test
-    public void testUpdateCategory() throws Exception {
+    void testUpdateCategory() throws Exception {
         CategoryRequestDto categoryRequestDto = new CategoryRequestDto();
         categoryRequestDto.setName("Home Appliances");
 
@@ -122,7 +121,7 @@ class CategoryControllerTest {
     }
 
     @Test
-    public void testDeleteCategory() throws Exception {
+    void testDeleteCategory() throws Exception {
         doNothing().when(categoryService).deleteCategory(1L);
 
         mockMvc.perform(delete("/category/1"))
@@ -132,7 +131,7 @@ class CategoryControllerTest {
     }
 
 
-    public static String asJsonString(final Object obj) {
+    static String asJsonString(final Object obj) {
         try {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj);
         } catch (Exception e) {

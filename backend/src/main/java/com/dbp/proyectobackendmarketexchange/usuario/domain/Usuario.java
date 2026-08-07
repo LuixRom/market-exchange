@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -91,16 +92,16 @@ public class Usuario implements UserDetails {
     private String suspensionReason;
 
     @OneToMany(mappedBy = "reviewedUser", cascade = CascadeType.ALL)
-    private List<Rating> ratingsReceived;
+    private transient List<Rating> ratingsReceived;
 
     @OneToMany(mappedBy = "reviewer", cascade = CascadeType.ALL)
-    private List<Rating> ratingsGiven;
+    private transient List<Rating> ratingsGiven;
 
     @OneToMany(mappedBy = "proposer")
-    private List<TradeProposal> proposedTradeProposals;
+    private transient List<TradeProposal> proposedTradeProposals;
 
     @OneToMany(mappedBy = "receiver")
-    private List<TradeProposal> receivedTradeProposals;
+    private transient List<TradeProposal> receivedTradeProposals;
 
 
     @Override
@@ -125,11 +126,11 @@ public class Usuario implements UserDetails {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(Clock.systemDefaultZone());
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(Clock.systemDefaultZone());
     }
 }

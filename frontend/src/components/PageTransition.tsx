@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { fadeIn } from "../lib/motion";
 
-export function PageTransition({ children }: { children: ReactNode }) {
+export function PageTransition({ children }: Readonly<{ children: ReactNode }>) {
   const location = useLocation();
   return (
     <motion.div

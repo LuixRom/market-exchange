@@ -26,9 +26,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -58,6 +60,9 @@ class ShipmentServiceTest {
     @Mock
     private UsuarioRepository usuarioRepository;
 
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
+
     @InjectMocks
     private ShipmentService shipmentService;
 
@@ -66,7 +71,7 @@ class ShipmentServiceTest {
     private TradeProposal tradeProposal;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
 
         proposer = new Usuario();
@@ -108,7 +113,7 @@ class ShipmentServiceTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         SecurityContextHolder.clearContext();
     }
 
@@ -119,7 +124,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testGetAllShipments() {
+    void testGetAllShipments() {
         Shipment shipment1 = new Shipment();
         Shipment shipment2 = new Shipment();
 
@@ -133,7 +138,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCreateShipmentForTradeProposal_Accepted() {
+    void testCreateShipmentForTradeProposal_Accepted() {
         when(shipmentRepository.existsByTradeProposalId(100L)).thenReturn(false);
         when(shipmentRepository.save(any(Shipment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -143,7 +148,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCreateShipmentForTradeProposal_NotAccepted() {
+    void testCreateShipmentForTradeProposal_NotAccepted() {
         tradeProposal.setStatus(TradeStatus.PENDING);
 
         assertThrows(IllegalStateException.class, () -> shipmentService.createShipmentForTradeProposal(tradeProposal));
@@ -151,7 +156,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCreateShipmentForTradeProposal_AlreadyExists_NoOp() {
+    void testCreateShipmentForTradeProposal_AlreadyExists_NoOp() {
         when(shipmentRepository.existsByTradeProposalId(100L)).thenReturn(true);
 
         shipmentService.createShipmentForTradeProposal(tradeProposal);
@@ -170,7 +175,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testGetShipmentById_ParticipantAllowed() {
+    void testGetShipmentById_ParticipantAllowed() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
@@ -182,13 +187,13 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testGetShipmentById_NotFound() {
+    void testGetShipmentById_NotFound() {
         when(shipmentRepository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> shipmentService.getShipmentById(1L));
     }
 
     @Test
-    public void testGetShipmentById_Forbidden() {
+    void testGetShipmentById_Forbidden() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(false);
@@ -197,7 +202,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testUpdateAddresses_ProposerEditsInitiatorAddress() {
+    void testUpdateAddresses_ProposerEditsInitiatorAddress() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         authenticateAs(proposer);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -215,7 +220,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testUpdateAddresses_ProposerCannotEditReceiveAddress() {
+    void testUpdateAddresses_ProposerCannotEditReceiveAddress() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         authenticateAs(proposer);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -229,7 +234,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testUpdateAddresses_BlockedAfterShipped() {
+    void testUpdateAddresses_BlockedAfterShipped() {
         Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
@@ -241,7 +246,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testPrepareShipment_Success() {
+    void testPrepareShipment_Success() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         authenticateAs(proposer);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -255,7 +260,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testPrepareShipment_InvalidTransition() {
+    void testPrepareShipment_InvalidTransition() {
         Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
@@ -264,7 +269,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testPrepareShipment_ForbiddenForReceiver() {
+    void testPrepareShipment_ForbiddenForReceiver() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(false);
@@ -273,7 +278,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testShipShipment_Success() {
+    void testShipShipment_Success() {
         Shipment shipment = buildShipment(ShipmentStatus.PREPARING);
         authenticateAs(proposer);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -288,7 +293,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testShipShipment_DuplicateTrackingCode_TranslatesToInvalidTransition() {
+    void testShipShipment_DuplicateTrackingCode_TranslatesToInvalidTransition() {
         Shipment shipment = buildShipment(ShipmentStatus.PREPARING);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
@@ -299,7 +304,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testShipShipment_InvalidTransition() {
+    void testShipShipment_InvalidTransition() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L)).thenReturn(true);
@@ -308,7 +313,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testDeliverShipment_Success_CompletesTradeProposal() {
+    void testDeliverShipment_Success_CompletesTradeProposal() {
         Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
         shipment.setProposerDeliveryConfirmedAt(LocalDateTime.now());
         authenticateAs(receiver);
@@ -328,7 +333,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testDeliverShipment_ForbiddenForProposer() {
+    void testDeliverShipment_ForbiddenForProposer() {
         Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
         authenticateAs(proposer);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -338,7 +343,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testDeliverShipment_CannotDeliverTwice() {
+    void testDeliverShipment_CannotDeliverTwice() {
         Shipment shipment = buildShipment(ShipmentStatus.DELIVERED);
         authenticateAs(receiver);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -351,7 +356,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCancelShipment_AllowedFromPending() {
+    void testCancelShipment_AllowedFromPending() {
         Shipment shipment = buildShipment(ShipmentStatus.PENDING);
         authenticateAs(proposer);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -365,7 +370,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCancelShipment_AllowedFromPreparing() {
+    void testCancelShipment_AllowedFromPreparing() {
         Shipment shipment = buildShipment(ShipmentStatus.PREPARING);
         authenticateAs(proposer);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
@@ -378,7 +383,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCancelShipment_ProhibitedFromInTransit() {
+    void testCancelShipment_ProhibitedFromInTransit() {
         Shipment shipment = buildShipment(ShipmentStatus.IN_TRANSIT);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
@@ -387,7 +392,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testCancelShipment_ProhibitedFromDelivered() {
+    void testCancelShipment_ProhibitedFromDelivered() {
         Shipment shipment = buildShipment(ShipmentStatus.DELIVERED);
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(shipment));
         when(authorizationUtils.isAdminOrResourceOwner(1L, 2L)).thenReturn(true);
@@ -396,7 +401,7 @@ class ShipmentServiceTest {
     }
 
     @Test
-    public void testDeleteShipment() {
+    void testDeleteShipment() {
         doNothing().when(shipmentRepository).deleteById(1L);
 
         shipmentService.deleteShipment(1L);

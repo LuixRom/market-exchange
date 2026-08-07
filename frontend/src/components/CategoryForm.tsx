@@ -23,7 +23,7 @@ export default function CategoryForm({
   submitLabel,
   successMessage,
   errorMessage,
-}: CategoryFormProps) {
+}: Readonly<CategoryFormProps>) {
   const navigate = useNavigate();
 
   function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {

@@ -1,31 +1,30 @@
-import { HTMLAttributes, KeyboardEvent, forwardRef } from "react";
+import { ButtonHTMLAttributes, forwardRef, HTMLAttributes } from "react";
 import { cn } from "../../lib/cn";
 
-const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, onClick, onKeyDown, ...props }, ref) => {
-    const isInteractive = !!onClick;
+type CardProps = HTMLAttributes<HTMLDivElement> & Pick<ButtonHTMLAttributes<HTMLButtonElement>, "onClick">;
 
-    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-      onKeyDown?.(event);
-      if (isInteractive && (event.key === "Enter" || event.key === " ")) {
-        event.preventDefault();
-        event.currentTarget.click();
-      }
-    };
+const Card = forwardRef<HTMLDivElement | HTMLButtonElement, CardProps>(
+  ({ className, onClick, ...props }, ref) => {
+    if (onClick) {
+      return (
+        <button
+          ref={ref as React.Ref<HTMLButtonElement>}
+          type="button"
+          onClick={onClick}
+          className={cn(
+            "block w-full text-left rounded-card border border-border bg-surface shadow-card",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+            className
+          )}
+          {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
+        />
+      );
+    }
 
     return (
       <div
-        ref={ref}
-        role={isInteractive ? "button" : undefined}
-        tabIndex={isInteractive ? 0 : undefined}
-        onClick={onClick}
-        onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
-        className={cn(
-          "rounded-card border border-border bg-surface shadow-card",
-          isInteractive &&
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-          className
-        )}
+        ref={ref as React.Ref<HTMLDivElement>}
+        className={cn("rounded-card border border-border bg-surface shadow-card", className)}
         {...props}
       />
     );

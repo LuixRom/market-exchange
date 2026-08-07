@@ -29,26 +29,18 @@ export default function UserItems() {
     }, []);
 
     useEffect(() => {
-        const loadImages = async () => {
-            const accessToken = localStorage.getItem("accessToken");
-            if (!accessToken) return;
+        const accessToken = sessionStorage.getItem("accessToken");
+        if (!accessToken || items.length === 0) return;
 
-            const imagePromises = items.map(async (item) => {
-                try {
-                    const imageUrl = await fetchItemImage(item, accessToken);
-                    return { id: item.id, url: imageUrl };
-                } catch {
-                    return { id: item.id, url: "/default-placeholder.png" };
-                }
-            });
-
-            const images = await Promise.all(imagePromises);
-            setImageUrls(images.reduce((acc, img) => ({ ...acc, [img.id]: img.url }), {}));
-        };
-
-        if (items.length > 0) {
-            loadImages();
-        }
+        items.forEach((item) => {
+            fetchItemImage(item, accessToken)
+                .then((url) => {
+                    setImageUrls((prev) => ({ ...prev, [item.id]: url }));
+                })
+                .catch(() => {
+                    setImageUrls((prev) => ({ ...prev, [item.id]: "/default-placeholder.png" }));
+                });
+        });
     }, [items]);
 
     function handleSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -88,11 +80,12 @@ export default function UserItems() {
                     {filteredItems.map((item) => (
                         <motion.li key={item.id} variants={slideUp}>
                             <Card className="p-4 flex gap-4">
-                                <div className="w-24 h-24 bg-gray-50 rounded-card flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
+                                <div className={`w-24 h-24 bg-gray-50 rounded-card flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100 ${!imageUrls[item.id] ? "animate-pulse" : ""}`}>
                                     <img
                                         src={imageUrls[item.id] || "/default-placeholder.png"}
                                         alt={item.name}
                                         className="w-full h-full object-contain p-1"
+                                        loading="lazy"
                                     />
                                 </div>
                                 <div>

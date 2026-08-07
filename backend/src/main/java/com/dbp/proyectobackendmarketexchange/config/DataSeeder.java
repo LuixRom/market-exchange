@@ -10,6 +10,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -17,6 +19,7 @@ public class DataSeeder implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final CategoryRepository categoryRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
     private final boolean enabled;
     private final String adminEmail;
     private final String adminPassword;
@@ -30,6 +33,7 @@ public class DataSeeder implements CommandLineRunner {
     public DataSeeder(UsuarioRepository usuarioRepository,
                       CategoryRepository categoryRepository,
                       PasswordEncoder passwordEncoder,
+                      Clock clock,
                       @Value("${app.seed.enabled:false}") boolean enabled,
                       @Value("${app.seed.admin.email:admin@marketexchange.local}") String adminEmail,
                       @Value("${app.seed.admin.password:}") String adminPassword,
@@ -52,6 +56,7 @@ public class DataSeeder implements CommandLineRunner {
         this.usuarioRepository = usuarioRepository;
         this.categoryRepository = categoryRepository;
         this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
         this.enabled = enabled;
         this.adminEmail = adminEmail;
         this.adminPassword = adminPassword;
@@ -88,19 +93,21 @@ public class DataSeeder implements CommandLineRunner {
             throw new IllegalStateException("La contrasena seed para " + seed.email() + " es requerida");
         }
 
-        usuarioRepository.findByEmail(seed.email()).orElseGet(() -> {
-            Usuario usuario = new Usuario();
-            usuario.setFirstname(seed.firstname());
-            usuario.setLastname(seed.lastname());
-            usuario.setEmail(seed.email());
-            usuario.setPhone(seed.phone());
-            usuario.setAddress(seed.address());
-            usuario.setPassword(passwordEncoder.encode(seed.password()));
-            usuario.setRole(seed.role());
-            usuario.setEmailVerified(true);
-            usuario.setEmailVerifiedAt(java.time.LocalDateTime.now());
-            return usuarioRepository.save(usuario);
-        });
+        if (usuarioRepository.findByEmail(seed.email()).isPresent()) {
+            return;
+        }
+
+        Usuario usuario = new Usuario();
+        usuario.setFirstname(seed.firstname());
+        usuario.setLastname(seed.lastname());
+        usuario.setEmail(seed.email());
+        usuario.setPhone(seed.phone());
+        usuario.setAddress(seed.address());
+        usuario.setPassword(passwordEncoder.encode(seed.password()));
+        usuario.setRole(seed.role());
+        usuario.setEmailVerified(true);
+        usuario.setEmailVerifiedAt(LocalDateTime.now(clock));
+        usuarioRepository.save(usuario);
     }
 
     private void seedCategories() {

@@ -8,7 +8,7 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ItemCreatedEvent extends ApplicationEvent {
 
-    private final Item item;
+    private final transient Item item;
 
     public ItemCreatedEvent(Object source, Item item) {
         super(source);

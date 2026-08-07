@@ -16,11 +16,12 @@ import com.dbp.proyectobackendmarketexchange.usuario.infrastructure.UsuarioRepos
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
     private final long emailVerificationHours;
     private final long passwordResetMinutes;
     private final long refreshTokenDays;
@@ -42,6 +44,7 @@ public class AuthenticationService {
                                  JwtService jwtService,
                                  PasswordEncoder passwordEncoder,
                                  ApplicationEventPublisher eventPublisher,
+                                 Clock clock,
                                  @Value("${app.auth.email-verification-token-hours:24}") long emailVerificationHours,
                                  @Value("${app.auth.password-reset-token-minutes:30}") long passwordResetMinutes,
                                  @Value("${app.auth.refresh-token-days:14}") long refreshTokenDays) {
@@ -51,6 +54,7 @@ public class AuthenticationService {
         this.passwordEncoder = passwordEncoder;
         this.modelMapper = new ModelMapper();
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
         this.emailVerificationHours = emailVerificationHours;
         this.passwordResetMinutes = passwordResetMinutes;
         this.refreshTokenDays = refreshTokenDays;
@@ -58,21 +62,18 @@ public class AuthenticationService {
 
     public JwtAuthResponse signin(LoginRequest req) {
         String email = EmailNormalizer.normalize(req.getUsername());
-        Optional<Usuario> user = usuarioRepository.findByEmail(email);
 
-        if (user.isEmpty()) {
-            throw new UsernameNotFoundException("Email is not registered");
-        }
+        // Same exception/message for "no such user" and "wrong password" so the
+        // response never discloses whether an email is registered.
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .filter(u -> passwordEncoder.matches(req.getPassword(), u.getPassword()))
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        if (!passwordEncoder.matches(req.getPassword(), user.get().getPassword())) {
-            throw new IllegalArgumentException("Password is incorrect");
-        }
-
-        if (!user.get().isEmailVerified()) {
+        if (!usuario.isEmailVerified()) {
             throw new DisabledException("Debes verificar tu correo antes de iniciar sesion");
         }
 
-        return createAuthResponse(user.get());
+        return createAuthResponse(usuario);
     }
 
     public JwtAuthResponse signup(RegisterRequest req) {
@@ -88,13 +89,13 @@ public class AuthenticationService {
         newUser.setAddress(req.getAddress().trim());
         newUser.setPhone(req.getPhone().trim());
         newUser.setPassword(passwordEncoder.encode(req.getPassword()));
-        newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setCreatedAt(LocalDateTime.now(clock));
         newUser.setRole(Role.USER);
         newUser.setEmailVerified(false);
 
         usuarioRepository.save(newUser);
         AccountToken verificationToken = createToken(newUser, AccountTokenType.EMAIL_VERIFICATION,
-                LocalDateTime.now().plusHours(emailVerificationHours));
+                LocalDateTime.now(clock).plusHours(emailVerificationHours));
         eventPublisher.publishEvent(new UsuarioCreadoEvent(this, newUser, verificationToken.getToken()));
 
         JwtAuthResponse response = new JwtAuthResponse();
@@ -106,7 +107,7 @@ public class AuthenticationService {
         AccountToken accountToken = loadActiveToken(token, AccountTokenType.EMAIL_VERIFICATION);
         Usuario usuario = accountToken.getUsuario();
         usuario.setEmailVerified(true);
-        usuario.setEmailVerifiedAt(LocalDateTime.now());
+        usuario.setEmailVerifiedAt(LocalDateTime.now(clock));
         usuarioRepository.save(usuario);
         markUsed(accountToken);
     }
@@ -119,7 +120,7 @@ public class AuthenticationService {
         }
 
         AccountToken resetToken = createToken(usuario.get(), AccountTokenType.PASSWORD_RESET,
-                LocalDateTime.now().plusMinutes(passwordResetMinutes));
+                LocalDateTime.now(clock).plusMinutes(passwordResetMinutes));
         eventPublisher.publishEvent(new PasswordResetRequestedEvent(this, usuario.get(), resetToken.getToken()));
         return resetToken.getToken();
     }
@@ -145,7 +146,7 @@ public class AuthenticationService {
     public void logout(String refreshToken) {
         accountTokenRepository.findByTokenAndType(refreshToken, AccountTokenType.REFRESH)
                 .ifPresent(token -> {
-                    token.setRevokedAt(LocalDateTime.now());
+                    token.setRevokedAt(LocalDateTime.now(clock));
                     accountTokenRepository.save(token);
                 });
     }
@@ -154,14 +155,14 @@ public class AuthenticationService {
         JwtAuthResponse response = new JwtAuthResponse();
         response.setToken(jwtService.generateToken(usuario));
         response.setRefreshToken(createToken(usuario, AccountTokenType.REFRESH,
-                LocalDateTime.now().plusDays(refreshTokenDays)).getToken());
+                LocalDateTime.now(clock).plusDays(refreshTokenDays)).getToken());
         response.setEmailVerified(usuario.isEmailVerified());
         return response;
     }
 
     private AccountToken createToken(Usuario usuario, AccountTokenType type, LocalDateTime expiresAt) {
         AccountToken accountToken = new AccountToken();
-        accountToken.setToken(UUID.randomUUID().toString() + UUID.randomUUID());
+        accountToken.setToken(UUID.randomUUID().toString());
         accountToken.setType(type);
         accountToken.setUsuario(usuario);
         accountToken.setExpiresAt(expiresAt);
@@ -171,14 +172,14 @@ public class AuthenticationService {
     private AccountToken loadActiveToken(String token, AccountTokenType type) {
         AccountToken accountToken = accountTokenRepository.findByTokenAndType(token, type)
                 .orElseThrow(() -> new InvalidUserFieldException("Token invalido"));
-        if (!accountToken.isActive(LocalDateTime.now())) {
+        if (!accountToken.isActive(LocalDateTime.now(clock))) {
             throw new InvalidUserFieldException("Token expirado o ya utilizado");
         }
         return accountToken;
     }
 
     private void markUsed(AccountToken accountToken) {
-        accountToken.setUsedAt(LocalDateTime.now());
+        accountToken.setUsedAt(LocalDateTime.now(clock));
         accountTokenRepository.save(accountToken);
     }
 }

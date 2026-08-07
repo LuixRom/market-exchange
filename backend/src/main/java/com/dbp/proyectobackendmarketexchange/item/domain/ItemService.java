@@ -34,16 +34,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class ItemService {
     private static final String IMAGE_DIRECTORY = "items";
     private static final int MAX_IMAGES_PER_ITEM = 4;
+    private static final String ITEM_NOT_FOUND = "Item no encontrado";
+    private static final String IMAGE_NOT_FOUND = "Imagen no encontrada";
+    private static final String ITEM_PATH_PREFIX = "/item/";
 
     private final ItemRepository itemRepository;
     private final CategoryRepository categoryRepository;
@@ -54,6 +57,7 @@ public class ItemService {
     private final ApplicationEventPublisher eventPublisher;
     private final AuthorizationUtils authorizationUtils;
     private final StorageServiceRegistry storageServiceRegistry;
+    private final Clock clock;
 
     public ItemService(ApplicationEventPublisher eventPublisher,
                        ItemRepository itemRepository,
@@ -63,7 +67,8 @@ public class ItemService {
                        ItemImageRepository itemImageRepository,
                        ItemModerationHistoryRepository itemModerationHistoryRepository,
                        AuthorizationUtils authorizationUtils,
-                       StorageServiceRegistry storageServiceRegistry) {
+                       StorageServiceRegistry storageServiceRegistry,
+                       Clock clock) {
         this.itemRepository = itemRepository;
         this.categoryRepository = categoryRepository;
         this.usuarioRepository = usuarioRepository;
@@ -73,13 +78,14 @@ public class ItemService {
         this.authorizationUtils = authorizationUtils;
         this.eventPublisher = eventPublisher;
         this.storageServiceRegistry = storageServiceRegistry;
+        this.clock = clock;
     }
 
     @Transactional
     public ItemResponseDto createItem(ItemRequestDto itemDto) {
         Usuario user = resolveCurrentUser();
         assertActiveUser(user);
-        Category category = categoryRepository.findById(itemDto.getCategory_id())
+        Category category = categoryRepository.findById(itemDto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada"));
 
         Item item = new Item();
@@ -107,7 +113,7 @@ public class ItemService {
     @Transactional
     public ItemResponseDto replaceItemImage(Long itemId, MultipartFile image) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
 
         if (!authorizationUtils.isAdminOrResourceOwner(item.getUsuario().getId())) {
             throw new ForbiddenOperationException("No tienes permiso para reemplazar la imagen de este item.");
@@ -180,19 +186,19 @@ public class ItemService {
     }
 
     public List<ItemImageResponseDto> getItemImages(Long itemId) {
-        itemRepository.findById(itemId).orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+        itemRepository.findById(itemId).orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
         return itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(itemId).stream()
                 .map(this::mapImageToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
     public void deleteItemImage(Long itemId, Long imageId) {
         Item item = loadOwnedEditableItem(itemId);
         ItemImage image = itemImageRepository.findById(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(IMAGE_NOT_FOUND));
         if (!image.getItem().getId().equals(itemId)) {
-            throw new ResourceNotFoundException("Imagen no encontrada");
+            throw new ResourceNotFoundException(IMAGE_NOT_FOUND);
         }
         if (itemImageRepository.countByItemId(itemId) <= 1) {
             throw new IllegalStateException("El item debe conservar al menos una imagen");
@@ -207,7 +213,7 @@ public class ItemService {
             ItemImage nextPrimary = itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(itemId)
                     .stream()
                     .findFirst()
-                    .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada"));
+                    .orElseThrow(() -> new ResourceNotFoundException(IMAGE_NOT_FOUND));
             setPrimaryImage(item, nextPrimary);
         }
     }
@@ -216,9 +222,9 @@ public class ItemService {
     public ItemImageResponseDto markPrimaryImage(Long itemId, Long imageId) {
         Item item = loadOwnedEditableItem(itemId);
         ItemImage image = itemImageRepository.findById(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(IMAGE_NOT_FOUND));
         if (!image.getItem().getId().equals(itemId)) {
-            throw new ResourceNotFoundException("Imagen no encontrada");
+            throw new ResourceNotFoundException(IMAGE_NOT_FOUND);
         }
         setPrimaryImage(item, image);
         return mapImageToDto(image);
@@ -226,12 +232,12 @@ public class ItemService {
 
     public byte[] retrieveItemImage(Long itemId, Long imageId) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
         assertVisible(item);
         ItemImage image = itemImageRepository.findById(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(IMAGE_NOT_FOUND));
         if (!image.getItem().getId().equals(itemId)) {
-            throw new ResourceNotFoundException("Imagen no encontrada");
+            throw new ResourceNotFoundException(IMAGE_NOT_FOUND);
         }
         return storageServiceRegistry.forProvider(image.getStorageProvider()).retrieve(image.getStorageKey());
     }
@@ -242,12 +248,12 @@ public class ItemService {
 
     public ItemImage getVisibleItemImage(Long itemId, Long imageId) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
         assertVisible(item);
         ItemImage image = itemImageRepository.findById(imageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(IMAGE_NOT_FOUND));
         if (!image.getItem().getId().equals(itemId)) {
-            throw new ResourceNotFoundException("Imagen no encontrada");
+            throw new ResourceNotFoundException(IMAGE_NOT_FOUND);
         }
         return image;
     }
@@ -257,12 +263,13 @@ public class ItemService {
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         Usuario moderator = resolveCurrentUser();
         ItemStatus previousStatus = item.getStatus();
-        ItemStatus newStatus = approve ? ItemStatus.APPROVED : ItemStatus.REJECTED;
+        boolean isApproved = Boolean.TRUE.equals(approve);
+        ItemStatus newStatus = isApproved ? ItemStatus.APPROVED : ItemStatus.REJECTED;
 
         item.setStatus(newStatus);
-        item.setRejectionReason(approve ? null : normalizeOptional(reason));
+        item.setRejectionReason(isApproved ? null : normalizeOptional(reason));
         item.setModeratedBy(moderator);
-        item.setModeratedAt(java.time.LocalDateTime.now());
+        item.setModeratedAt(java.time.LocalDateTime.now(clock));
         itemRepository.save(item);
 
         ItemModerationHistory history = new ItemModerationHistory();
@@ -282,7 +289,7 @@ public class ItemService {
 
     public List<ItemModerationHistoryResponseDto> getModerationHistory(Long itemId) {
         if (!itemRepository.existsById(itemId)) {
-            throw new ResourceNotFoundException("Item no encontrado");
+            throw new ResourceNotFoundException(ITEM_NOT_FOUND);
         }
         return itemModerationHistoryRepository.findByItemIdOrderByCreatedAtDesc(itemId).stream()
                 .map(this::mapModerationHistoryToDto)
@@ -291,9 +298,9 @@ public class ItemService {
 
     public ItemResponseDto updateItem(Long itemId, ItemRequestDto itemRequestDto) {
         Item existingItem = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
 
-        Category category = categoryRepository.findById(itemRequestDto.getCategory_id())
+        Category category = categoryRepository.findById(itemRequestDto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada"));
 
         if (!authorizationUtils.isAdminOrResourceOwner(existingItem.getUsuario().getId())) {
@@ -310,7 +317,7 @@ public class ItemService {
 
     public ItemResponseDto getItemById(Long itemId) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
         assertVisible(item);
         return mapItemToDto(item);
     }
@@ -335,7 +342,7 @@ public class ItemService {
         ItemSearchCriteria criteria = new ItemSearchCriteria();
         return itemRepository.findAll(buildCatalogSpecification(criteria, current)).stream()
                 .map(item -> mapItemToDto(item, current))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<ItemResponseDto> getItemsByUser(Long userId) {
@@ -349,7 +356,7 @@ public class ItemService {
                 ? itemRepository.findByUsuarioId(userId)
                 : itemRepository.findByUsuarioIdAndStatus(userId, ItemStatus.APPROVED);
 
-        return items.stream().map(item -> mapItemToDto(item, current)).collect(Collectors.toList());
+        return items.stream().map(item -> mapItemToDto(item, current)).toList();
     }
 
     public List<ItemResponseDto> getItemsByCategory(Long categoryId) {
@@ -362,20 +369,20 @@ public class ItemService {
                 ? itemRepository.findByCategoryId(categoryId)
                 : itemRepository.findByCategoryIdAndStatus(categoryId, ItemStatus.APPROVED);
 
-        return items.stream().map(item -> mapItemToDto(item, current)).collect(Collectors.toList());
+        return items.stream().map(item -> mapItemToDto(item, current)).toList();
     }
 
     public List<ItemResponseDto> getUserItems() {
         Usuario usuario = resolveCurrentUser();
         return itemRepository.findByUsuarioId(usuario.getId()).stream()
                 .map(item -> mapItemToDto(item, usuario))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public ItemResponseDto addFavorite(Long itemId) {
         Usuario usuario = resolveCurrentUser();
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
         assertVisible(item);
 
         if (!favoriteItemRepository.existsByUsuarioIdAndItemId(usuario.getId(), itemId)) {
@@ -398,7 +405,7 @@ public class ItemService {
         Usuario usuario = resolveCurrentUser();
         return favoriteItemRepository.findByUsuarioIdOrderByCreatedAtDesc(usuario.getId()).stream()
                 .map(favorite -> mapItemToDto(favorite.getItem(), usuario))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public StorageCleanupResponseDto cleanupOrphanLocalItemImages() {
@@ -459,7 +466,7 @@ public class ItemService {
             return;
         }
         if (item.getStatus() != ItemStatus.APPROVED) {
-            throw new ResourceNotFoundException("Item no encontrado");
+            throw new ResourceNotFoundException(ITEM_NOT_FOUND);
         }
     }
 
@@ -511,7 +518,7 @@ public class ItemService {
 
     private Item loadOwnedEditableItem(Long itemId) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Item no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ITEM_NOT_FOUND));
         if (!authorizationUtils.isAdminOrResourceOwner(item.getUsuario().getId())) {
             throw new ForbiddenOperationException("No tienes permiso para modificar imagenes de este item.");
         }
@@ -534,6 +541,7 @@ public class ItemService {
         try {
             storageServiceRegistry.forProvider(image.getStorageProvider()).delete(image.getStorageKey());
         } catch (RuntimeException ignored) {
+            // Best-effort cleanup: the DB record is already gone, so a leftover blob is not fatal.
         }
     }
 
@@ -578,21 +586,21 @@ public class ItemService {
         }
 
         if (item.getUsuario() != null) {
-            responseDto.setUser_id(item.getUsuario().getId());
+            responseDto.setUserId(item.getUsuario().getId());
             responseDto.setUserName(item.getUsuario().getEmail());
         }
         if (item.getCategory() != null) {
-            responseDto.setCategory_id(item.getCategory().getId());
+            responseDto.setCategoryId(item.getCategory().getId());
             responseDto.setCategoryName(item.getCategory().getName());
         }
         if (item.getImageKey() != null) {
-            responseDto.setImageUrl("/item/" + item.getId() + "/image");
+            responseDto.setImageUrl(ITEM_PATH_PREFIX + item.getId() + "/image");
         }
         List<ItemImage> images = itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(item.getId());
         if (!images.isEmpty()) {
-            responseDto.setImageUrl("/item/" + item.getId() + "/images/" + images.get(0).getId());
+            responseDto.setImageUrl(buildItemImageUrl(item.getId(), images.get(0).getId()));
             responseDto.setImageUrls(images.stream()
-                    .map(image -> "/item/" + item.getId() + "/images/" + image.getId())
+                    .map(image -> buildItemImageUrl(item.getId(), image.getId()))
                     .toList());
         }
         if (current != null) {
@@ -619,11 +627,15 @@ public class ItemService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
+    private String buildItemImageUrl(Long itemId, Long imageId) {
+        return ITEM_PATH_PREFIX + itemId + "/images/" + imageId;
+    }
+
     private ItemImageResponseDto mapImageToDto(ItemImage image) {
         ItemImageResponseDto dto = new ItemImageResponseDto();
         dto.setId(image.getId());
         dto.setItemId(image.getItem().getId());
-        dto.setImageUrl("/item/" + image.getItem().getId() + "/images/" + image.getId());
+        dto.setImageUrl(buildItemImageUrl(image.getItem().getId(), image.getId()));
         dto.setPrimary(image.isPrimaryImage());
         dto.setSortOrder(image.getSortOrder());
         dto.setCreatedAt(image.getCreatedAt());

@@ -50,16 +50,20 @@ export default function AllItems() {
 
             setLoading(true);
             try {
-                const catalog = await item.getCatalog({
-                    status: role === "ADMIN" ? "PENDING_REVIEW" : "APPROVED",
-                    page: 0,
-                    size: 100,
-                    sort: "createdAt,desc",
-                });
+                const [catalog, allCategories] = await Promise.all([
+                    item.getCatalog({
+                        status: role === "ADMIN" ? "PENDING_REVIEW" : "APPROVED",
+                        page: 0,
+                        size: 100,
+                        sort: "createdAt,desc",
+                    }),
+                    category.getAllCategories(),
+                ]);
+
                 const filtered = role === "ADMIN"
                     ? catalog.content
                     : catalog.content.filter((item) => item.user_id !== userId);
-                const allCategories = await category.getAllCategories();
+
                 setItems(filtered);
                 setFilteredItems(filtered);
                 setCategories(allCategories);
@@ -77,26 +81,18 @@ export default function AllItems() {
     }, [role, userId]);
 
     useEffect(() => {
-        const loadImages = async () => {
-            const accessToken = localStorage.getItem("accessToken");
-            if (!accessToken) return;
+        const accessToken = sessionStorage.getItem("accessToken");
+        if (!accessToken || items.length === 0) return;
 
-            const imagePromises = items.map(async (item) => {
-                try {
-                    const imageUrl = await fetchItemImage(item, accessToken);
-                    return { id: item.id, url: imageUrl };
-                } catch {
-                    return { id: item.id, url: "/default-placeholder.png" };
-                }
-            });
-
-            const images = await Promise.all(imagePromises);
-            setImageUrls(images.reduce((acc, img) => ({ ...acc, [img.id]: img.url }), {}));
-        };
-
-        if (items.length > 0) {
-            loadImages();
-        }
+        items.forEach((item) => {
+            fetchItemImage(item, accessToken)
+                .then((url) => {
+                    setImageUrls((prev) => ({ ...prev, [item.id]: url }));
+                })
+                .catch(() => {
+                    setImageUrls((prev) => ({ ...prev, [item.id]: "/default-placeholder.png" }));
+                });
+        });
     }, [items]);
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,11 +247,12 @@ export default function AllItems() {
                     {filteredItems.map((item) => (
                         <motion.li key={item.id} variants={slideUp}>
                             <Card className="overflow-hidden h-full flex flex-col rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition-shadow">
-                                <div className="w-full h-56 bg-gray-50 border-b border-gray-100 flex items-center justify-center overflow-hidden">
+                                <div className={`w-full h-56 bg-gray-50 border-b border-gray-100 flex items-center justify-center overflow-hidden ${!imageUrls[item.id] ? "animate-pulse" : ""}`}>
                                     <img
                                         src={imageUrls[item.id] || "/default-placeholder.png"}
                                         alt={item.name}
                                         className="w-full h-full object-contain p-3"
+                                        loading="lazy"
                                     />
                                 </div>
                                 <div className="p-4 flex flex-col flex-1">
@@ -330,6 +327,7 @@ export default function AllItems() {
                     </p>
                     {role === "USER" && (
                         <button
+                            type="button"
                             onClick={() => navigate("/dashboard/item/create")}
                             className="px-5 py-2.5 rounded-xl border border-primary text-primary hover:bg-primary/5 text-xs font-bold transition-all shadow-xs"
                         >

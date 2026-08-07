@@ -9,7 +9,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
@@ -25,7 +24,7 @@ public class CategoryService {
         List<Category> categories = categoryRepository.findAll();
         return categories.stream()
                 .map(category -> modelMapper.map(category, CategoryResponseDto.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public CategoryResponseDto getCategoryById(Long id) {

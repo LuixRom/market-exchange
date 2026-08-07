@@ -1,6 +1,8 @@
 package com.dbp.proyectobackendmarketexchange.storage.infrastructure;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -21,56 +23,27 @@ class SupabaseStorageErrorsTest {
         assertTrue(SupabaseStorageErrors.isObjectNotFound(ex));
     }
 
-    @Test
-    void testIsObjectNotFound_Http400WithTextualStatusCode404AndNotFoundError_True() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST,
-                "{\"statusCode\":\"404\",\"error\":\"not_found\",\"message\":\"Object not found\"}");
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"statusCode\":\"404\",\"error\":\"not_found\",\"message\":\"Object not found\"}",
+            "{\"statusCode\":404,\"error\":\"not_found\",\"message\":\"Object not found\"}",
+            "{\"statusCode\":\"404\",\"error\":\"not_found\",\"message\":\"algo completamente distinto\"}"
+    })
+    void testIsObjectNotFound_Http400WithStructuredNotFoundBody_True(String body) {
+        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST, body);
         assertTrue(SupabaseStorageErrors.isObjectNotFound(ex));
     }
 
-    @Test
-    void testIsObjectNotFound_Http400WithNumericStatusCode404AndNotFoundError_True() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST,
-                "{\"statusCode\":404,\"error\":\"not_found\",\"message\":\"Object not found\"}");
-        assertTrue(SupabaseStorageErrors.isObjectNotFound(ex));
-    }
-
-    @Test
-    void testIsObjectNotFound_Http400DifferentMessageButCorrectStructuredFields_True() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST,
-                "{\"statusCode\":\"404\",\"error\":\"not_found\",\"message\":\"algo completamente distinto\"}");
-        assertTrue(SupabaseStorageErrors.isObjectNotFound(ex));
-    }
-
-    @Test
-    void testIsObjectNotFound_Http400MalformedJson_False() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST, "{\"statusCode\":");
-        assertFalse(SupabaseStorageErrors.isObjectNotFound(ex));
-    }
-
-    @Test
-    void testIsObjectNotFound_Http400EmptyBody_False() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST, "");
-        assertFalse(SupabaseStorageErrors.isObjectNotFound(ex));
-    }
-
-    @Test
-    void testIsObjectNotFound_Http400StatusCode400_False() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST,
-                "{\"statusCode\":\"400\",\"error\":\"not_found\"}");
-        assertFalse(SupabaseStorageErrors.isObjectNotFound(ex));
-    }
-
-    @Test
-    void testIsObjectNotFound_Http400DifferentError_False() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST,
-                "{\"statusCode\":\"404\",\"error\":\"invalid_request\"}");
-        assertFalse(SupabaseStorageErrors.isObjectNotFound(ex));
-    }
-
-    @Test
-    void testIsObjectNotFound_Http400NonJsonBody_False() {
-        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST, "algo salió mal");
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"statusCode\":",
+            "",
+            "{\"statusCode\":\"400\",\"error\":\"not_found\"}",
+            "{\"statusCode\":\"404\",\"error\":\"invalid_request\"}",
+            "algo salió mal"
+    })
+    void testIsObjectNotFound_Http400WithoutValidNotFoundBody_False(String body) {
+        HttpClientErrorException ex = errorWith(HttpStatus.BAD_REQUEST, body);
         assertFalse(SupabaseStorageErrors.isObjectNotFound(ex));
     }
 

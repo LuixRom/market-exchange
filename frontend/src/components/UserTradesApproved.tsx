@@ -72,6 +72,7 @@ export default function UserTradesAccepted() {
             Cuando aceptes intercambios, los veras aqui.
           </p>
           <button
+            type="button"
             onClick={() => navigate("/dashboard/cuenta")}
             className="px-5 py-2.5 rounded-xl border border-primary text-primary hover:bg-primary/5 text-xs font-bold transition-all shadow-xs"
           >

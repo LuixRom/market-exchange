@@ -25,7 +25,7 @@ interface RegisterFormProps {
 
 const caja2Img = "/img/caja2.png";
 
-export default function RegisterForm({ formData, setFormData, onSubmit }: RegisterFormProps) {
+export default function RegisterForm({ formData, setFormData, onSubmit }: Readonly<RegisterFormProps>) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);

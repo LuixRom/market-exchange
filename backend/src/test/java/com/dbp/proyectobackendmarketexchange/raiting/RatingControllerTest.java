@@ -31,7 +31,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 
 @WebMvcTest(RatingController.class)
 @AutoConfigureMockMvc(addFilters = false)  // Deshabilitar filtros de seguridad en pruebas
-public class RatingControllerTest {
+class RatingControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -44,7 +44,7 @@ public class RatingControllerTest {
 
     @Test
     @WithMockUser
-    public void testCrearRating() throws Exception {
+    void testCrearRating() throws Exception {
         RatingRequestDto requestDto = new RatingRequestDto();
         requestDto.setTradeProposalId(1L);
         requestDto.setScore(4);
@@ -64,7 +64,7 @@ public class RatingControllerTest {
 
     @Test
     @WithMockUser
-    public void testListarRatings() throws Exception {
+    void testListarRatings() throws Exception {
         List<RatingResponseDto> responseDtos = new ArrayList<>();
         when(ratingService.listarRatings()).thenReturn(responseDtos);
 
@@ -75,7 +75,7 @@ public class RatingControllerTest {
 
     @Test
     @WithMockUser
-    public void testObtenerRatingsPorUsuario() throws Exception {
+    void testObtenerRatingsPorUsuario() throws Exception {
         List<RatingResponseDto> responseDtos = new ArrayList<>();
         when(ratingService.obtenerRatingsPorUsuario(1L)).thenReturn(responseDtos);
 
@@ -86,7 +86,7 @@ public class RatingControllerTest {
 
     @Test
     @WithMockUser
-    public void testGetReputation() throws Exception {
+    void testGetReputation() throws Exception {
         RatingReputationDto reputation = new RatingReputationDto();
         reputation.setUserId(1L);
         reputation.setAverageScore(4.5);
@@ -102,7 +102,7 @@ public class RatingControllerTest {
 
     @Test
     @WithMockUser
-    public void testDeleteRating() throws Exception {
+    void testDeleteRating() throws Exception {
         doNothing().when(ratingService).deleteRating(1L);
 
         mockMvc.perform(delete("/ratings/{id}", 1L)

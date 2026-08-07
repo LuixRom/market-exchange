@@ -381,9 +381,10 @@ export default function UserSettings() {
             </div>
 
             <div className="space-y-3">
-              <div
+              <button
+                type="button"
                 onClick={() => setEditMode(true)}
-                className="p-3.5 rounded-2xl border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer"
+                className="w-full p-3.5 rounded-2xl border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer text-left"
               >
                 <div className="flex items-center gap-3">
                   <FaKey className="text-gray-400 text-sm" />
@@ -393,7 +394,7 @@ export default function UserSettings() {
                   </div>
                 </div>
                 <FaChevronRight className="text-gray-300 text-xs" />
-              </div>
+              </button>
 
               <div className="p-3.5 rounded-2xl border border-gray-100 flex items-center justify-between hover:border-gray-200 transition-colors">
                 <div className="flex items-center gap-3">
@@ -471,8 +472,9 @@ export default function UserSettings() {
         {formData && (
           <form className="space-y-4 text-left py-2">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nombre</label>
+              <label htmlFor="firstname" className="block text-xs font-bold text-gray-700 mb-1">Nombre</label>
               <Input
+                id="firstname"
                 type="text"
                 name="firstname"
                 value={formData.firstname}
@@ -481,8 +483,9 @@ export default function UserSettings() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Apellido</label>
+              <label htmlFor="lastname" className="block text-xs font-bold text-gray-700 mb-1">Apellido</label>
               <Input
+                id="lastname"
                 type="text"
                 name="lastname"
                 value={formData.lastname}
@@ -491,8 +494,9 @@ export default function UserSettings() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Correo electrónico</label>
+              <label htmlFor="email" className="block text-xs font-bold text-gray-700 mb-1">Correo electrónico</label>
               <Input
+                id="email"
                 type="email"
                 name="email"
                 value={formData.email}
@@ -501,8 +505,9 @@ export default function UserSettings() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
+              <label htmlFor="phone" className="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
               <Input
+                id="phone"
                 type="text"
                 name="phone"
                 value={formData.phone}
@@ -511,8 +516,9 @@ export default function UserSettings() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Dirección</label>
+              <label htmlFor="address" className="block text-xs font-bold text-gray-700 mb-1">Dirección</label>
               <textarea
+                id="address"
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
@@ -522,8 +528,9 @@ export default function UserSettings() {
               ></textarea>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Ubicacion</label>
+              <label htmlFor="location" className="block text-xs font-bold text-gray-700 mb-1">Ubicacion</label>
               <Input
+                id="location"
                 type="text"
                 name="location"
                 value={profileData.location || ""}
@@ -532,8 +539,9 @@ export default function UserSettings() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Avatar URL</label>
+              <label htmlFor="avatarUrl" className="block text-xs font-bold text-gray-700 mb-1">Avatar URL</label>
               <Input
+                id="avatarUrl"
                 type="url"
                 name="avatarUrl"
                 value={profileData.avatarUrl || ""}
@@ -542,8 +550,9 @@ export default function UserSettings() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Bio</label>
+              <label htmlFor="bio" className="block text-xs font-bold text-gray-700 mb-1">Bio</label>
               <textarea
+                id="bio"
                 name="bio"
                 value={profileData.bio || ""}
                 onChange={handleProfileInputChange}
@@ -553,8 +562,9 @@ export default function UserSettings() {
                 placeholder="Cuenta brevemente sobre ti"
               />
             </div>            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nueva Contraseña (opcional)</label>
+              <label htmlFor="password" className="block text-xs font-bold text-gray-700 mb-1">Nueva Contraseña (opcional)</label>
               <Input
+                id="password"
                 type="password"
                 name="password"
                 value={formData.password}
@@ -587,10 +597,11 @@ export default function UserSettings() {
         }
       >
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">
+          <label htmlFor="deleteConfirmation" className="block text-xs font-bold text-gray-700 mb-1">
             Escribe ELIMINAR para confirmar
           </label>
           <Input
+            id="deleteConfirmation"
             value={deleteConfirmation}
             onChange={(event) => setDeleteConfirmation(event.target.value)}
             placeholder="ELIMINAR"

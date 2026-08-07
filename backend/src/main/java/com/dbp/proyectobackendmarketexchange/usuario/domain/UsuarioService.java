@@ -19,9 +19,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UsuarioService {
@@ -30,17 +30,20 @@ public class UsuarioService {
     private final ApplicationEventPublisher eventPublisher;
     private final AuthorizationUtils authorizationUtils;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           ModelMapper modelMapper,
                           ApplicationEventPublisher eventPublisher,
                           AuthorizationUtils authorizationUtils,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          Clock clock) {
         this.usuarioRepository = usuarioRepository;
         this.modelMapper = modelMapper;
         this.eventPublisher = eventPublisher;
         this.authorizationUtils = authorizationUtils;
         this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
     }
 
     public UsuarioResponseDto registrarUsuario(UsuarioRequestDto requestDTO) {
@@ -52,7 +55,7 @@ public class UsuarioService {
         usuario.setAddress(requestDTO.getAddress().trim());
         usuario.setPhone(requestDTO.getPhone().trim());
         usuario.setRole(Role.USER);
-        usuario.setCreatedAt(LocalDateTime.now());
+        usuario.setCreatedAt(LocalDateTime.now(clock));
         usuario = usuarioRepository.save(usuario);
 
         eventPublisher.publishEvent(new UsuarioCreadoEvent(this, usuario));
@@ -60,20 +63,18 @@ public class UsuarioService {
     }
 
     public UsuarioResponseDto buscarUsuarioPorId(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
+        Usuario usuario = findUsuarioOrThrow(id);
         return mapToResponse(usuario);
     }
 
     public List<UsuarioResponseDto> listarUsuarios() {
         return usuarioRepository.findAll().stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public UsuarioResponseDto actualizarUsuario(Long id, UsuarioRequestDto requestDTO) {
-        Usuario usuarioExistente = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
+        Usuario usuarioExistente = findUsuarioOrThrow(id);
 
         if (!authorizationUtils.isAdminOrResourceOwner(usuarioExistente.getId())) {
             throw new ForbiddenOperationException("No tienes permiso para actualizar este usuario.");
@@ -91,8 +92,7 @@ public class UsuarioService {
     }
 
     public void eliminarUsuario(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
+        Usuario usuario = findUsuarioOrThrow(id);
 
         if (!authorizationUtils.isAdminOrResourceOwner(usuario.getId())) {
             throw new ForbiddenOperationException("No tienes permiso para eliminar este usuario.");
@@ -121,17 +121,15 @@ public class UsuarioService {
     }
 
     public UsuarioResponseDto suspendUser(Long id, String reason) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
+        Usuario usuario = findUsuarioOrThrow(id);
         usuario.setSuspended(true);
-        usuario.setSuspendedAt(LocalDateTime.now());
+        usuario.setSuspendedAt(LocalDateTime.now(clock));
         usuario.setSuspensionReason(normalizeOptional(reason));
         return mapToResponse(usuarioRepository.save(usuario));
     }
 
     public UsuarioResponseDto unsuspendUser(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
+        Usuario usuario = findUsuarioOrThrow(id);
         usuario.setSuspended(false);
         usuario.setSuspendedAt(null);
         usuario.setSuspensionReason(null);
@@ -139,21 +137,24 @@ public class UsuarioService {
     }
 
     public UsuarioResponseDto blockUser(Long id, String reason) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
+        Usuario usuario = findUsuarioOrThrow(id);
         usuario.setBlocked(true);
-        usuario.setBlockedAt(LocalDateTime.now());
+        usuario.setBlockedAt(LocalDateTime.now(clock));
         usuario.setBlockedReason(normalizeOptional(reason));
         return mapToResponse(usuarioRepository.save(usuario));
     }
 
     public UsuarioResponseDto unblockUser(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
+        Usuario usuario = findUsuarioOrThrow(id);
         usuario.setBlocked(false);
         usuario.setBlockedAt(null);
         usuario.setBlockedReason(null);
         return mapToResponse(usuarioRepository.save(usuario));
+    }
+
+    private Usuario findUsuarioOrThrow(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID " + id + " no encontrado"));
     }
 
     private Usuario getCurrentUsuario() {

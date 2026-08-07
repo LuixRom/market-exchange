@@ -8,6 +8,7 @@ import {
   FaClipboardCheck,
   FaFlag,
   FaUsers,
+  FaSearch,
 } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import { usuario } from "../services/user/user";
@@ -20,102 +21,91 @@ const marketingLinkClass =
 
 const mainimage = "/img/logos_Mesa de trabajo 1 copia 3.png";
 
-export default function Navbar() {
-  const auth = useAuth();
-  const location = useLocation();
-  const [userName, setUserName] = useState<string | null>(null);
+function navLinkClass(active: boolean) {
+  return `flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+    active ? "bg-primary/10 text-primary font-bold" : "text-gray-600 hover:text-primary hover:bg-gray-100"
+  }`;
+}
 
-  const role = auth.role;
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const userInfo = await usuario.getMyInfo();
-        setUserName(`${userInfo.firstname}`);
-      } catch (error) {
-        console.error("Error al obtener información del usuario:", error);
-      }
-    };
-
-    if (auth.isAuthenticated) {
-      fetchUserInfo();
-    }
-  }, [auth.isAuthenticated]);
-
-  // 1. Variante de marketing: solo en "/" sin sesión iniciada.
-  if (!auth.isAuthenticated && location.pathname === "/") {
-    return (
-      <nav className="sticky top-0 z-40 flex justify-between items-center bg-cream/95 backdrop-blur-md py-3 px-4 sm:px-8 shadow-sm transition-all">
-        <Link to="/" className={`flex items-center gap-2 ${marketingLinkClass}`}>
-          <img
-            src={mainimage}
-            alt="Market Exchange"
-            className="h-14 w-auto object-contain flex-shrink-0"
-          />
-          <span className="leading-tight">
-            <span className="block font-bold text-gray-900">market exchange</span>
-            <span className="block text-caption text-gray-500">
-              Intercambia. Reutiliza. Revoluciona.
-            </span>
+function MarketingNavbar() {
+  return (
+    <nav className="sticky top-0 z-40 flex justify-between items-center bg-cream/95 backdrop-blur-md py-3 px-4 sm:px-8 shadow-sm transition-all">
+      <Link to="/" className={`flex items-center gap-2 ${marketingLinkClass}`}>
+        <img
+          src={mainimage}
+          alt="Market Exchange"
+          className="h-14 w-auto object-contain flex-shrink-0"
+        />
+        <span className="leading-tight">
+          <span className="block font-bold text-gray-900">market exchange</span>
+          <span className="block text-caption text-gray-500">
+            Intercambia. Reutiliza. Revoluciona.
           </span>
+        </span>
+      </Link>
+
+      <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-700">
+        <a href="/" className={`text-primary border-b-2 border-primary pb-1 ${marketingLinkClass}`}>
+          Inicio
+        </a>
+        <a href="#nosotros" className={marketingLinkClass}>Sobre nosotros</a>
+        <a href="#productos" className={marketingLinkClass}>Catálogo</a>
+        <a href="#porque" className={marketingLinkClass}>¿Por qué elegirnos?</a>
+        <a href="#contacto" className={marketingLinkClass}>Contacto</a>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Link to="/login" className={`text-sm font-semibold ${marketingLinkClass}`}>
+          Inicia sesión
         </Link>
+        <Button asChild size="sm">
+          <Link to="/register">Regístrate</Link>
+        </Button>
+      </div>
+    </nav>
+  );
+}
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-700">
-          <a href="/" className={`text-primary border-b-2 border-primary pb-1 ${marketingLinkClass}`}>
-            Inicio
-          </a>
-          <a href="#nosotros" className={marketingLinkClass}>Sobre nosotros</a>
-          <a href="#productos" className={marketingLinkClass}>Catálogo</a>
-          <a href="#porque" className={marketingLinkClass}>¿Por qué elegirnos?</a>
-          <a href="#contacto" className={marketingLinkClass}>Contacto</a>
-        </div>
+function AuthNavbar({ isLogin }: Readonly<{ isLogin: boolean }>) {
+  return (
+    <nav className="sticky top-0 z-40 flex justify-between items-center bg-white py-3.5 px-4 sm:px-8 shadow-sm transition-all">
+      <Link to="/" className="flex items-center gap-2 hover:opacity-95 transition-opacity">
+        <img
+          src={mainimage}
+          alt="Market Exchange"
+          className="h-12 sm:h-14 w-auto object-contain flex-shrink-0"
+        />
+        <span className="leading-tight">
+          <span className="block font-bold text-gray-900 text-base sm:text-lg">market exchange</span>
+          <span className="block text-caption text-gray-500">
+            Intercambia. Reutiliza. Revoluciona.
+          </span>
+        </span>
+      </Link>
 
-        <div className="flex items-center gap-4">
-          <Link to="/login" className={`text-sm font-semibold ${marketingLinkClass}`}>
-            Inicia sesión
+      <div className="flex items-center gap-3 sm:gap-4">
+        <span className="hidden sm:inline text-sm text-gray-700 font-semibold">
+          {isLogin ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}
+        </span>
+        <Button asChild size="md" className="rounded-full px-6">
+          <Link to={isLogin ? "/register" : "/login"}>
+            {isLogin ? "Regístrate" : "Inicia sesión"}
           </Link>
-          <Button asChild size="sm">
-            <Link to="/register">Regístrate</Link>
-          </Button>
-        </div>
-      </nav>
-    );
-  }
+        </Button>
+      </div>
+    </nav>
+  );
+}
 
-  // 2. Variante de autenticación (Login y Register)
-  if (!auth.isAuthenticated && (location.pathname === "/login" || location.pathname === "/register")) {
-    const isLogin = location.pathname === "/login";
-    return (
-      <nav className="sticky top-0 z-40 flex justify-between items-center bg-white py-3.5 px-4 sm:px-8 shadow-sm transition-all">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-95 transition-opacity">
-          <img
-            src={mainimage}
-            alt="Market Exchange"
-            className="h-12 sm:h-14 w-auto object-contain flex-shrink-0"
-          />
-          <span className="leading-tight">
-            <span className="block font-bold text-gray-900 text-base sm:text-lg">market exchange</span>
-            <span className="block text-caption text-gray-500">
-              Intercambia. Reutiliza. Revoluciona.
-            </span>
-          </span>
-        </Link>
+type DashboardNavbarProps = {
+  pathname: string;
+  role: string | null;
+  userName: string | null;
+  isAuthenticated: boolean;
+  onLogout: () => void;
+};
 
-        <div className="flex items-center gap-3 sm:gap-4">
-          <span className="hidden sm:inline text-sm text-gray-700 font-semibold">
-            {isLogin ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}
-          </span>
-          <Button asChild size="md" className="rounded-full px-6">
-            <Link to={isLogin ? "/register" : "/login"}>
-              {isLogin ? "Regístrate" : "Inicia sesión"}
-            </Link>
-          </Button>
-        </div>
-      </nav>
-    );
-  }
-
-  // 3. Navbar cuando el usuario está Autenticado / en Dashboard
+function DashboardNavbar({ pathname, role, userName, isAuthenticated, onLogout }: Readonly<DashboardNavbarProps>) {
   return (
     <nav className="sticky top-0 z-40 bg-white border-b border-gray-200/80 shadow-sm py-3 px-4 sm:px-8 flex items-center justify-between transition-all">
       {/* Sección Izquierda: Logo */}
@@ -133,27 +123,18 @@ export default function Navbar() {
 
       {/* Sección Central: Links de navegación tipo pills */}
       <div className="hidden md:flex items-center gap-2 text-sm font-semibold">
-        <Link
-          to="/dashboard"
-          className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-            location.pathname === "/dashboard"
-              ? "bg-primary/10 text-primary font-bold"
-              : "text-gray-600 hover:text-primary hover:bg-gray-100"
-          }`}
-        >
+        <Link to="/dashboard" className={navLinkClass(pathname === "/dashboard")}>
           <FaHome size={15} />
           <span>Inicio</span>
         </Link>
 
+        <Link to="/dashboard/explore" className={navLinkClass(pathname.startsWith("/dashboard/explore"))}>
+          <FaSearch size={14} />
+          <span>Explorar</span>
+        </Link>
+
         {role === "USER" && (
-          <Link
-            to="/dashboard/item/create"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-              location.pathname === "/dashboard/item/create"
-                ? "bg-primary/10 text-primary font-bold"
-                : "text-gray-600 hover:text-primary hover:bg-gray-100"
-            }`}
-          >
+          <Link to="/dashboard/item/create" className={navLinkClass(pathname === "/dashboard/item/create")}>
             <FaPlusCircle size={15} />
             <span>Publicar</span>
           </Link>
@@ -161,50 +142,22 @@ export default function Navbar() {
 
         {role === "ADMIN" && (
           <>
-            <Link
-              to="/dashboard/admin/items"
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                location.pathname.startsWith("/dashboard/admin/items")
-                  ? "bg-primary/10 text-primary font-bold"
-                  : "text-gray-600 hover:text-primary hover:bg-gray-100"
-              }`}
-            >
+            <Link to="/dashboard/admin/items" className={navLinkClass(pathname.startsWith("/dashboard/admin/items"))}>
               <FaClipboardCheck size={15} />
               <span>Items</span>
             </Link>
-            <Link
-              to="/dashboard/admin/reports"
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                location.pathname.startsWith("/dashboard/admin/reports")
-                  ? "bg-primary/10 text-primary font-bold"
-                  : "text-gray-600 hover:text-primary hover:bg-gray-100"
-              }`}
-            >
+            <Link to="/dashboard/admin/reports" className={navLinkClass(pathname.startsWith("/dashboard/admin/reports"))}>
               <FaFlag size={15} />
               <span>Reportes</span>
             </Link>
-            <Link
-              to="/dashboard/admin/users"
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                location.pathname.startsWith("/dashboard/admin/users")
-                  ? "bg-primary/10 text-primary font-bold"
-                  : "text-gray-600 hover:text-primary hover:bg-gray-100"
-              }`}
-            >
+            <Link to="/dashboard/admin/users" className={navLinkClass(pathname.startsWith("/dashboard/admin/users"))}>
               <FaUsers size={15} />
               <span>Usuarios</span>
             </Link>
           </>
         )}
 
-        <Link
-          to="/dashboard/category"
-          className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-            location.pathname.startsWith("/dashboard/category")
-              ? "bg-primary/10 text-primary font-bold"
-              : "text-gray-600 hover:text-primary hover:bg-gray-100"
-          }`}
-        >
+        <Link to="/dashboard/category" className={navLinkClass(pathname.startsWith("/dashboard/category"))}>
           <FaThLarge size={15} />
           <span>Categorías</span>
         </Link>
@@ -212,12 +165,13 @@ export default function Navbar() {
 
       {/* Sección Derecha: Usuario y Dropdown */}
       <div className="flex items-center gap-3">
-        {auth.isAuthenticated ? (
+        {isAuthenticated ? (
           <>
             <NotificationBell />
             <DropdownMenu
               trigger={
                 <button
+                  type="button"
                   className="flex items-center gap-2.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold py-1.5 px-3.5 rounded-full transition-all border border-primary/20"
                   aria-label="Perfil de usuario"
                 >
@@ -249,7 +203,7 @@ export default function Navbar() {
                 <Link to="/dashboard/cuenta" className="font-semibold">Cuenta</Link>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onSelect={() => auth.logout()}
+                onSelect={onLogout}
                 className="text-danger hover:bg-danger/10 font-semibold"
               >
                 Cerrar sesión
@@ -268,5 +222,49 @@ export default function Navbar() {
         )}
       </div>
     </nav>
+  );
+}
+
+export default function Navbar() {
+  const auth = useAuth();
+  const location = useLocation();
+  const [userName, setUserName] = useState<string | null>(null);
+
+  const role = auth.role;
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo = await usuario.getMyInfo();
+        setUserName(`${userInfo.firstname}`);
+      } catch (error) {
+        console.error("Error al obtener información del usuario:", error);
+      }
+    };
+
+    if (auth.isAuthenticated) {
+      fetchUserInfo();
+    }
+  }, [auth.isAuthenticated]);
+
+  // 1. Variante de marketing: solo en "/" sin sesión iniciada.
+  if (!auth.isAuthenticated && location.pathname === "/") {
+    return <MarketingNavbar />;
+  }
+
+  // 2. Variante de autenticación (Login y Register)
+  if (!auth.isAuthenticated && (location.pathname === "/login" || location.pathname === "/register")) {
+    return <AuthNavbar isLogin={location.pathname === "/login"} />;
+  }
+
+  // 3. Navbar cuando el usuario está Autenticado / en Dashboard, o cualquier otra ruta sin sesión
+  return (
+    <DashboardNavbar
+      pathname={location.pathname}
+      role={role}
+      userName={userName}
+      isAuthenticated={auth.isAuthenticated}
+      onLogout={() => auth.logout()}
+    />
   );
 }

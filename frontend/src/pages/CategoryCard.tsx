@@ -9,7 +9,7 @@ interface CategoryCardProps {
   description: string;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ id, name, description }) => {
+const CategoryCard: React.FC<Readonly<CategoryCardProps>> = ({ id, name, description }) => {
   const navigate = useNavigate();
 
   const handleCardClick = () => {

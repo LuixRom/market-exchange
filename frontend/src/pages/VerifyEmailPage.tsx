@@ -33,7 +33,15 @@ export default function VerifyEmailPage() {
       });
   }, [searchParams]);
 
-  const Icon = state === "success" ? FaCheckCircle : state === "error" ? FaExclamationCircle : FaEnvelope;
+  let Icon = FaEnvelope;
+  let heading = "Verificando correo";
+  if (state === "success") {
+    Icon = FaCheckCircle;
+    heading = "Correo verificado";
+  } else if (state === "error") {
+    Icon = FaExclamationCircle;
+    heading = "No se pudo verificar";
+  }
 
   return (
     <div className="bg-cream flex flex-col min-h-[calc(100vh-80px)] justify-between">
@@ -43,7 +51,7 @@ export default function VerifyEmailPage() {
             <Icon size={28} />
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900">
-            {state === "success" ? "Correo verificado" : state === "error" ? "No se pudo verificar" : "Verificando correo"}
+            {heading}
           </h1>
           <p className="mt-3 text-sm text-gray-600">{message}</p>
 

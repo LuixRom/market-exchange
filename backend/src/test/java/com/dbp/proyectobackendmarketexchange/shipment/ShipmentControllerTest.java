@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ShipmentController.class)
 @AutoConfigureMockMvc(addFilters = false)
-public class ShipmentControllerTest {
+class ShipmentControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,7 +38,7 @@ public class ShipmentControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    public void testGetAllShipments() throws Exception {
+    void testGetAllShipments() throws Exception {
         when(shipmentService.getAllShipments()).thenReturn(java.util.Collections.emptyList());
 
         mockMvc.perform(get("/shipments"))
@@ -49,7 +49,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testGetShipmentById() throws Exception {
+    void testGetShipmentById() throws Exception {
         ShipmentResponseDto responseDto = new ShipmentResponseDto();
         responseDto.setId(1L);
 
@@ -63,7 +63,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testUpdateAddresses() throws Exception {
+    void testUpdateAddresses() throws Exception {
         ShipmentAddressUpdateDto requestDto = new ShipmentAddressUpdateDto();
         requestDto.setInitiatorAddress("Nueva direccion");
 
@@ -83,7 +83,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testPrepareShipment() throws Exception {
+    void testPrepareShipment() throws Exception {
         ShipmentResponseDto responseDto = new ShipmentResponseDto();
         responseDto.setId(1L);
         responseDto.setStatus(ShipmentStatus.PREPARING);
@@ -98,7 +98,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testShipShipment() throws Exception {
+    void testShipShipment() throws Exception {
         ShipmentShipRequestDto requestDto = new ShipmentShipRequestDto();
         requestDto.setTrackingCode("TRACK-1");
 
@@ -120,7 +120,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testShipShipment_NoBody() throws Exception {
+    void testShipShipment_NoBody() throws Exception {
         ShipmentResponseDto responseDto = new ShipmentResponseDto();
         responseDto.setId(1L);
         responseDto.setStatus(ShipmentStatus.IN_TRANSIT);
@@ -134,7 +134,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testDeliverShipment() throws Exception {
+    void testDeliverShipment() throws Exception {
         ShipmentResponseDto responseDto = new ShipmentResponseDto();
         responseDto.setId(1L);
         responseDto.setStatus(ShipmentStatus.DELIVERED);
@@ -149,7 +149,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testCancelShipment() throws Exception {
+    void testCancelShipment() throws Exception {
         ShipmentResponseDto responseDto = new ShipmentResponseDto();
         responseDto.setId(1L);
         responseDto.setStatus(ShipmentStatus.CANCELLED);
@@ -164,7 +164,7 @@ public class ShipmentControllerTest {
     }
 
     @Test
-    public void testDeleteShipment() throws Exception {
+    void testDeleteShipment() throws Exception {
         doNothing().when(shipmentService).deleteShipment(1L);
 
         mockMvc.perform(delete("/shipments/1"))

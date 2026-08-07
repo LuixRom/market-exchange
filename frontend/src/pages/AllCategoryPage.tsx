@@ -67,7 +67,7 @@ export default function CategoriesPage() {
         categories.filter(
           (cat) =>
             cat.name.toLowerCase().includes(term.toLowerCase()) ||
-            (cat.description && cat.description.toLowerCase().includes(term.toLowerCase()))
+            cat.description?.toLowerCase().includes(term.toLowerCase())
         )
       );
     }
@@ -195,6 +195,14 @@ export default function CategoriesPage() {
                     <motion.tr
                       key={cat.id}
                       onClick={() => navigate(`/dashboard/category/${cat.id}/items`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigate(`/dashboard/category/${cat.id}/items`);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                       className="hover:bg-primary/5 cursor-pointer transition-colors group"
                       whileHover={{ backgroundColor: "rgba(124, 58, 237, 0.03)" }}
                     >
@@ -214,7 +222,7 @@ export default function CategoriesPage() {
                       {/* Estado */}
                       <td className="py-4 px-6 text-center">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-xs font-bold">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>{" "}
                           Activa
                         </span>
                       </td>
@@ -224,6 +232,7 @@ export default function CategoriesPage() {
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/dashboard/category/edit/${cat.id}`);
@@ -235,6 +244,7 @@ export default function CategoriesPage() {
                               <FaPencilAlt size={15} />
                             </button>
                             <button
+                              type="button"
                               onClick={(e) => handleDelete(e, cat.id, cat.name)}
                               className="p-2 text-gray-400 hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
                               title="Eliminar categoría"
@@ -288,15 +298,17 @@ export default function CategoriesPage() {
           </span>
           <div className="flex items-center gap-1">
             <button
+              type="button"
               disabled
               className="px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-gray-400 cursor-not-allowed"
             >
               &lt;
             </button>
-            <button className="px-3 py-1 rounded-lg bg-primary text-white font-bold shadow-sm">
+            <button type="button" className="px-3 py-1 rounded-lg bg-primary text-white font-bold shadow-sm">
               1
             </button>
             <button
+              type="button"
               disabled
               className="px-2.5 py-1 rounded-lg border border-gray-200 bg-white text-gray-400 cursor-not-allowed"
             >

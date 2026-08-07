@@ -3,82 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifica tu correo</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background-color: #4CAF50;
-            padding: 20px;
-            text-align: center;
-            color: white;
-        }
-        .content {
-            padding: 30px;
-        }
-        .content h2 {
-            color: #333333;
-            font-size: 20px;
-        }
-        .content p {
-            color: #555555;
-            line-height: 1.5;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        .button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            display: inline-block;
-            font-size: 16px;
-        }
-        .verification-link {
-            word-break: break-all;
-            color: #2f6f33;
-            font-size: 13px;
-        }
-        .footer {
-            background-color: #f4f4f4;
-            padding: 10px 20px;
-            text-align: center;
-            color: #888888;
-            font-size: 12px;
-        }
-    </style>
+    <title>Verifica tu correo | MarketExchange</title>
 </head>
-<body>
-<div class="email-container">
-    <div class="header">
-        <h1>MarketExchange</h1>
+<body style="margin: 0; padding: 30px 15px; background-color: #f4f6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #374151;">
+
+    <div style="max-width: 540px; margin: 0 auto; background-color: #ffffff; border-radius: 28px; border: 1px solid #e1efe0; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06); text-align: center;">
+        
+        <!-- Header Banner Verde Ecologico -->
+        <div style="background: #467b36; background-image: linear-gradient(135deg, #447434 0%, #4d833b 50%, #3f6d2f 100%); padding: 32px 24px 56px 24px; text-align: center; color: #ffffff;">
+            <table align="center" border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                <tr>
+                    <td valign="middle" style="padding-right: 12px;">
+                        <div style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 14px; padding: 6px 10px; display: inline-block;">
+                            <span style="font-size: 24px; line-height: 1;">📦🍃</span>
+                        </div>
+                    </td>
+                    <td valign="middle" style="text-align: left;">
+                        <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1.1;">MarketExchange</h1>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #e2f4e0; font-weight: 500; letter-spacing: 0.2px;">Intercambia. Reutiliza. Revoluciona.</p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Curva suave divisoria entre banner y contenido -->
+        <div style="background-color: #ffffff; height: 16px; border-top-left-radius: 20px; border-top-right-radius: 20px; margin-top: -16px;"></div>
+
+        <!-- Insignia Central (Sobre de correo + Badge Checkmark) -->
+        <div style="text-align: center; margin-top: -42px; margin-bottom: 16px; position: relative;">
+            <div style="display: inline-block; width: 84px; height: 84px; background-color: #edf6eb; border-radius: 50%; border: 4px solid #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.08); text-align: center; line-height: 80px; position: relative;">
+                <span style="font-size: 38px; vertical-align: middle;">✉️</span>
+                <!-- Circulo flotante con checkmark -->
+                <div style="position: absolute; top: -2px; right: -2px; width: 28px; height: 28px; background-color: #467b36; border-radius: 50%; border: 2px solid #ffffff; color: #ffffff; font-size: 14px; font-weight: bold; line-height: 26px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">✓</div>
+                <!-- Destellos decorativos -->
+                <span style="position: absolute; top: 2px; left: -8px; color: #c084fc; font-size: 13px;">✦</span>
+                <span style="position: absolute; bottom: 2px; right: -8px; color: #10b981; font-size: 13px;">✦</span>
+            </div>
+        </div>
+
+        <!-- Body Content -->
+        <div style="padding: 0 32px 32px 32px;">
+            <!-- Saludo principal -->
+            <h2 style="margin: 0 0 10px 0; font-size: 24px; font-weight: 800; color: #111827; text-align: center;">
+                ¡Hola <span th:text="${nombre}">Usuario</span>! 👋
+            </h2>
+
+            <!-- Divisor morado pastel -->
+            <div style="width: 48px; height: 4px; background-color: #d8b4fe; border-radius: 99px; margin: 0 auto 18px auto;"></div>
+
+            <!-- Parrafo de explicacion -->
+            <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563; line-height: 1.6; text-align: center;">
+                Gracias por registrarte en <strong style="color: #467b36;">MarketExchange</strong>.<br>
+                Para activar tu cuenta y poder iniciar sesión, verifica tu correo con el siguiente botón:
+            </p>
+
+            <!-- Botón Principal Verde -->
+            <div style="text-align: center; margin-bottom: 28px;">
+                <a th:href="${verificationUrl}" target="_blank" style="background-color: #467b36; color: #ffffff; text-decoration: none; padding: 14px 34px; border-radius: 12px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 6px 18px rgba(70, 123, 54, 0.28); transition: all 0.2s ease;">
+                    Verificar mi correo &nbsp;&rarr;
+                </a>
+            </div>
+
+            <!-- Divisor con icono de enlace en circulo morado -->
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0 24px 0;">
+                <tr>
+                    <td style="border-bottom: 1px solid #e5e7eb; position: relative; text-align: center;">
+                        <span style="background-color: #f3e8ff; border: 1px solid #e9d5ff; color: #9333ea; width: 34px; height: 34px; border-radius: 50%; display: inline-block; line-height: 32px; font-size: 14px; position: relative; top: 17px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">🔗</span>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Espaciador adicional para compensar la posicion del badge sobre la linea -->
+            <div style="height: 16px;"></div>
+
+            <!-- Caja 1: Verde - ¿El botón no funciona? -->
+            <div style="background-color: #f4f9f3; border: 1px solid #e0efe0; border-radius: 16px; padding: 16px 20px; margin-bottom: 14px; text-align: left;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td width="44" valign="top">
+                            <div style="width: 36px; height: 36px; background-color: #dcfce7; color: #467b36; border-radius: 50%; text-align: center; line-height: 34px; font-size: 16px; margin-top: 2px;">
+                                🔗
+                            </div>
+                        </td>
+                        <td valign="top" style="padding-left: 6px;">
+                            <strong style="font-size: 14px; color: #111827; display: block; margin-bottom: 2px;">¿El botón no funciona?</strong>
+                            <span style="font-size: 13px; color: #4b5563; display: block; margin-bottom: 6px;">Copia y pega este enlace en tu navegador:</span>
+                            <a th:href="${verificationUrl}" th:text="${verificationUrl}" style="font-size: 12px; font-family: Monaco, Consolas, 'Courier New', monospace; color: #3f6e34; word-break: break-all; font-weight: bold; text-decoration: underline;">http://localhost:5173/verify-email?token=example</a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Caja 2: Morada - Este enlace expira por seguridad -->
+            <div style="background-color: #faf6ff; border: 1px solid #f0e6fe; border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; text-align: left;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td width="44" valign="top">
+                            <div style="width: 36px; height: 36px; background-color: #f3e8ff; color: #7c3aed; border-radius: 50%; text-align: center; line-height: 34px; font-size: 16px; margin-top: 2px;">
+                                🛡️
+                            </div>
+                        </td>
+                        <td valign="top" style="padding-left: 6px;">
+                            <strong style="font-size: 14px; color: #111827; display: block; margin-bottom: 2px;">Este enlace expira por seguridad.</strong>
+                            <span style="font-size: 13px; color: #4b5563; display: block;">Si no creaste esta cuenta, puedes ignorar este mensaje.</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Footer interno del correo -->
+            <div style="border-top: 1px solid #f3f4f6; padding-top: 20px; text-align: center;">
+                <table align="center" border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                    <tr>
+                        <td valign="middle" style="padding-right: 10px;">
+                            <div style="width: 32px; height: 32px; background-color: #edf6eb; border-radius: 50%; text-align: center; line-height: 30px; font-size: 14px;">
+                                🍃
+                            </div>
+                        </td>
+                        <td valign="middle" style="text-align: left;">
+                            <p style="margin: 0; font-size: 13px; color: #4b5563; font-weight: 500;">Gracias por ser parte de nuestra comunidad.</p>
+                            <p style="margin: 2px 0 0 0; font-size: 13px; color: #6b7280;">— El equipo de <strong style="color: #467b36;">MarketExchange</strong> 💚</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
     </div>
-    <div class="content">
-        <h2>Hola <span th:text="${nombre}">Usuario</span>,</h2>
-        <p>Gracias por registrarte. Para activar tu cuenta y poder iniciar sesion, verifica tu correo con el siguiente boton:</p>
-        <p>
-            <a class="button" th:href="${verificationUrl}" target="_blank">Verificar mi correo</a>
-        </p>
-        <p>Si el boton no funciona, copia y pega este enlace en tu navegador:</p>
-        <p class="verification-link" th:text="${verificationUrl}">https://example.com/verify-email?token=token</p>
-        <p>Este enlace expira por seguridad. Si no creaste esta cuenta, puedes ignorar este mensaje.</p>
-    </div>
-    <div class="footer">
-        <p>&copy; 2026 MarketExchange. Todos los derechos reservados.</p>
-    </div>
-</div>
+
 </body>
 </html>

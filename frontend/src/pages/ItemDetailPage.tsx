@@ -62,7 +62,7 @@ export default function ItemDetailPage() {
     async function loadImages() {
       if (!item) return;
 
-      const accessToken = localStorage.getItem("accessToken");
+      const accessToken = sessionStorage.getItem("accessToken");
       if (!accessToken) return;
 
       try {

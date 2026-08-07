@@ -23,11 +23,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
+class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Autowired
     private TradeProposalRepository tradeProposalRepository;
@@ -43,7 +43,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
     private Usuario receiver;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         Category category = new Category();
         category.setName("Categoria de prueba");
         entityManager.persist(category);
@@ -99,7 +99,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testCreateTradeProposal() {
+    void testCreateTradeProposal() {
         TradeProposal proposal = buildProposal(offeredItem1, requestedItem1, TradeStatus.PENDING);
 
         proposal = tradeProposalRepository.save(proposal);
@@ -110,7 +110,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testFindById() {
+    void testFindById() {
         TradeProposal proposal = buildProposal(offeredItem1, requestedItem1, TradeStatus.PENDING);
         entityManager.persist(proposal);
 
@@ -122,7 +122,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testDeleteTradeProposal() {
+    void testDeleteTradeProposal() {
         TradeProposal proposal = buildProposal(offeredItem1, requestedItem1, TradeStatus.PENDING);
         proposal = tradeProposalRepository.save(proposal);
         Long id = proposal.getId();
@@ -134,7 +134,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testUpdateStatusToAccepted() {
+    void testUpdateStatusToAccepted() {
         TradeProposal proposal = buildProposal(offeredItem1, requestedItem1, TradeStatus.PENDING);
         proposal = tradeProposalRepository.save(proposal);
         Long id = proposal.getId();
@@ -149,7 +149,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testFindByStatus() {
+    void testFindByStatus() {
         TradeProposal pending = buildProposal(offeredItem1, requestedItem1, TradeStatus.PENDING);
         entityManager.persist(pending);
 
@@ -167,7 +167,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testExistsByOfferedItemIdAndRequestedItemIdAndStatus() {
+    void testExistsByOfferedItemIdAndRequestedItemIdAndStatus() {
         TradeProposal proposal = buildProposal(offeredItem1, requestedItem1, TradeStatus.PENDING);
         entityManager.persist(proposal);
 
@@ -179,7 +179,7 @@ public class TradeProposalRepositoryTest extends AbstractContainerBaseTest {
 
     @Test
     @Transactional
-    public void testCancelCompetingProposals() {
+    void testCancelCompetingProposals() {
         // Dos propuestas PENDING compitiendo por el mismo requestedItem1
         TradeProposal winner = buildProposal(offeredItem1, requestedItem1, TradeStatus.PENDING);
         entityManager.persist(winner);

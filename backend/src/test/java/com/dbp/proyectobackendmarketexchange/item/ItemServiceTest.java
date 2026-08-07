@@ -28,11 +28,13 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.List;
@@ -40,7 +42,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class ItemServiceTest {
+class ItemServiceTest {
 
     @Mock
     private ItemRepository itemRepository;
@@ -72,26 +74,29 @@ public class ItemServiceTest {
     @Mock
     private StorageService storageService;
 
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
+
     @InjectMocks
     private ItemService itemService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         when(itemImageRepository.findByItemIdOrderByPrimaryImageDescSortOrderAscIdAsc(anyLong())).thenReturn(List.of());
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         SecurityContextHolder.clearContext();
     }
 
     @Test
-    public void testCreateItem() {
+    void testCreateItem() {
         // Datos de entrada
         ItemRequestDto requestDto = new ItemRequestDto();
-        requestDto.setCategory_id(1L);
-        requestDto.setUser_id(1L);
+        requestDto.setCategoryId(1L);
+        requestDto.setUserId(1L);
 
         Category category = new Category();
         category.setId(1L);
@@ -123,10 +128,10 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testCreateItem_WithImage_StoresAndSetsKey() {
+    void testCreateItem_WithImage_StoresAndSetsKey() {
         ItemRequestDto requestDto = new ItemRequestDto();
-        requestDto.setCategory_id(1L);
-        requestDto.setUser_id(1L);
+        requestDto.setCategoryId(1L);
+        requestDto.setUserId(1L);
         MultipartFile image = mock(MultipartFile.class);
         when(image.isEmpty()).thenReturn(false);
         requestDto.setImage(image);
@@ -169,11 +174,11 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testUpdateItem() {
+    void testUpdateItem() {
         // Datos de entrada
         ItemRequestDto requestDto = new ItemRequestDto();
-        requestDto.setCategory_id(1L);
-        requestDto.setUser_id(1L);
+        requestDto.setCategoryId(1L);
+        requestDto.setUserId(1L);
 
         Category category = new Category();
         category.setId(1L);
@@ -201,7 +206,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testDeleteItem() {
+    void testDeleteItem() {
         // Datos de entrada
         Item item = new Item();
         item.setId(1L);
@@ -223,7 +228,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testGetItemById() {
+    void testGetItemById() {
         // Preparación de datos
         Usuario usuario = new Usuario();
         usuario.setId(1L);
@@ -254,7 +259,7 @@ public class ItemServiceTest {
 
 
     @Test
-    public void testGetAllItems() {
+    void testGetAllItems() {
         // Preparación de datos
         Category category = new Category();
         category.setId(1L);
@@ -288,7 +293,7 @@ public class ItemServiceTest {
 
 
     @Test
-    public void testDeleteItemUnauthorized() {
+    void testDeleteItemUnauthorized() {
         // Datos de entrada
         Item item = new Item();
         item.setId(1L);
@@ -333,7 +338,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testReplaceItemImage_Success_StoresNewThenDeletesOld() {
+    void testReplaceItemImage_Success_StoresNewThenDeletesOld() {
         Usuario owner = new Usuario();
         owner.setId(1L);
         Item item = buildItemWithImage(10L, owner, ItemStatus.APPROVED, "items/old.jpg");
@@ -362,7 +367,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testReplaceItemImage_SaveFails_CompensatesByDeletingNewFile() {
+    void testReplaceItemImage_SaveFails_CompensatesByDeletingNewFile() {
         Usuario owner = new Usuario();
         owner.setId(1L);
         Item item = buildItemWithImage(10L, owner, ItemStatus.APPROVED, "items/old.jpg");
@@ -384,7 +389,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testReplaceItemImage_StoreFails_NeverTouchesDbOrOldFile() {
+    void testReplaceItemImage_StoreFails_NeverTouchesDbOrOldFile() {
         Usuario owner = new Usuario();
         owner.setId(1L);
         Item item = buildItemWithImage(10L, owner, ItemStatus.APPROVED, "items/old.jpg");
@@ -402,7 +407,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testReplaceItemImage_OldDeleteFails_StillSucceeds() {
+    void testReplaceItemImage_OldDeleteFails_StillSucceeds() {
         Usuario owner = new Usuario();
         owner.setId(1L);
         Item item = buildItemWithImage(10L, owner, ItemStatus.APPROVED, "items/old.jpg");
@@ -427,7 +432,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testReplaceItemImage_ForbiddenWhenNotOwner() {
+    void testReplaceItemImage_ForbiddenWhenNotOwner() {
         Usuario owner = new Usuario();
         owner.setId(1L);
         Item item = buildItemWithImage(10L, owner, ItemStatus.APPROVED, "items/old.jpg");
@@ -440,7 +445,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testReplaceItemImage_BlockedWhenReserved() {
+    void testReplaceItemImage_BlockedWhenReserved() {
         Usuario owner = new Usuario();
         owner.setId(1L);
         Item item = buildItemWithImage(10L, owner, ItemStatus.RESERVED, "items/old.jpg");
@@ -453,7 +458,7 @@ public class ItemServiceTest {
     }
 
     @Test
-    public void testReplaceItemImage_BlockedWhenExchanged() {
+    void testReplaceItemImage_BlockedWhenExchanged() {
         Usuario owner = new Usuario();
         owner.setId(1L);
         Item item = buildItemWithImage(10L, owner, ItemStatus.EXCHANGED, "items/old.jpg");

@@ -18,7 +18,7 @@ type ScoreInputProps = {
     onChange: (value: number) => void;
 };
 
-function ScoreInput({ label, value, onChange }: ScoreInputProps) {
+function ScoreInput({ label, value, onChange }: Readonly<ScoreInputProps>) {
     return (
         <div>
             <p className="mb-1 text-sm font-bold text-gray-700">{label}</p>
@@ -39,7 +39,7 @@ function ScoreInput({ label, value, onChange }: ScoreInputProps) {
     );
 }
 
-function StarSummary({ value }: { value?: number | null }) {
+function StarSummary({ value }: Readonly<{ value?: number | null }>) {
     const normalized = value ?? 0;
     return (
         <span className="inline-flex items-center gap-1 text-amber-400">
@@ -59,7 +59,7 @@ function formatDate(value?: string | null) {
     });
 }
 
-export default function RatingPanel({ trade, currentUserId }: RatingPanelProps) {
+export default function RatingPanel({ trade, currentUserId }: Readonly<RatingPanelProps>) {
     const { toast } = useToast();
     const [ratings, setRatings] = useState<RatingResponse[]>([]);
     const [reputation, setReputation] = useState<RatingReputation | null>(null);
@@ -187,6 +187,13 @@ export default function RatingPanel({ trade, currentUserId }: RatingPanelProps) 
         );
     }
 
+    let submitLabel = "Enviar calificacion";
+    if (saving) {
+        submitLabel = "Guardando...";
+    } else if (ownRating) {
+        submitLabel = "Actualizar calificacion";
+    }
+
     return (
         <section className="mt-6 pt-6 border-t border-gray-100">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -241,7 +248,7 @@ export default function RatingPanel({ trade, currentUserId }: RatingPanelProps) 
 
                     <div className="mt-4 flex justify-end">
                         <Button type="submit" disabled={saving}>
-                            {saving ? "Guardando..." : ownRating ? "Actualizar calificacion" : "Enviar calificacion"}
+                            {submitLabel}
                         </Button>
                     </div>
                 </form>

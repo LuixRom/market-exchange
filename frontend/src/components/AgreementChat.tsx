@@ -13,7 +13,14 @@ type AgreementChatProps = {
     currentUserEmail?: string | null;
 };
 
-export default function AgreementChat({ tradeProposalId, currentUserId, currentUserEmail }: AgreementChatProps) {
+function addMessageIfNew(current: ChatMessageResponse[], message: ChatMessageResponse) {
+    if (current.some((existing) => existing.id === message.id)) {
+        return current;
+    }
+    return [...current, message];
+}
+
+export default function AgreementChat({ tradeProposalId, currentUserId, currentUserEmail }: Readonly<AgreementChatProps>) {
     const { toast } = useToast();
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
@@ -42,23 +49,20 @@ export default function AgreementChat({ tradeProposalId, currentUserId, currentU
         let subscription: { unsubscribe: () => void } | null = null;
         let active = true;
 
-        realtimeClient
-            .connect(setConnected)
-            .then(() => {
+        async function connectAndSubscribe() {
+            try {
+                await realtimeClient.connect(setConnected);
                 if (!active) return;
 
                 subscription = realtimeClient.subscribeToAgreementMessages(tradeProposalId, (message) => {
-                    setMessages((current) => {
-                        if (current.some((existing) => existing.id === message.id)) {
-                            return current;
-                        }
-                        return [...current, message];
-                    });
+                    setMessages((current) => addMessageIfNew(current, message));
                 });
-            })
-            .catch(() => {
+            } catch {
                 setConnected(false);
-            });
+            }
+        }
+
+        connectAndSubscribe();
 
         return () => {
             active = false;
@@ -79,12 +83,7 @@ export default function AgreementChat({ tradeProposalId, currentUserId, currentU
         try {
             setSending(true);
             const response = await chat.sendMessage(tradeProposalId, message);
-            setMessages((current) => {
-                if (current.some((existing) => existing.id === response.id)) {
-                    return current;
-                }
-                return [...current, response];
-            });
+            setMessages((current) => addMessageIfNew(current, response));
             setContent("");
         } catch {
             setContent(message);
@@ -115,8 +114,7 @@ export default function AgreementChat({ tradeProposalId, currentUserId, currentU
                     messages.map((message) => {
                         const own =
                             (currentUserId !== null && message.senderId === currentUserId) ||
-                            (currentUserEmail &&
-                                message.senderEmail.toLowerCase() === currentUserEmail.toLowerCase());
+                            currentUserEmail?.toLowerCase() === message.senderEmail.toLowerCase();
                         return (
                             <div key={message.id} className={`flex ${own ? "justify-end" : "justify-start"}`}>
                                 <div

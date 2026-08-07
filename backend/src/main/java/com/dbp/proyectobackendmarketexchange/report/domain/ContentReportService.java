@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,15 +25,18 @@ public class ContentReportService {
     private final UsuarioRepository usuarioRepository;
     private final ItemRepository itemRepository;
     private final TradeProposalRepository tradeProposalRepository;
+    private final Clock clock;
 
     public ContentReportService(ContentReportRepository reportRepository,
                                 UsuarioRepository usuarioRepository,
                                 ItemRepository itemRepository,
-                                TradeProposalRepository tradeProposalRepository) {
+                                TradeProposalRepository tradeProposalRepository,
+                                Clock clock) {
         this.reportRepository = reportRepository;
         this.usuarioRepository = usuarioRepository;
         this.itemRepository = itemRepository;
         this.tradeProposalRepository = tradeProposalRepository;
+        this.clock = clock;
     }
 
     public ReportResponseDto createReport(ReportRequestDto request) {
@@ -68,7 +72,7 @@ public class ContentReportService {
         report.setStatus(request.getStatus());
         report.setAdminNotes(request.getAdminNotes());
         report.setReviewedBy(admin);
-        report.setReviewedAt(LocalDateTime.now());
+        report.setReviewedAt(LocalDateTime.now(clock));
         return mapToDto(reportRepository.save(report));
     }
 

@@ -22,10 +22,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class RatingService {
@@ -37,16 +37,19 @@ public class RatingService {
     private final UsuarioRepository usuarioRepository;
     private final AuthorizationUtils authorizationUtils;
     private final NotificationService notificationService;
+    private final Clock clock;
 
     public RatingService(RatingRepository ratingRepository, TradeProposalRepository tradeProposalRepository,
                           UsuarioRepository usuarioRepository,
                           AuthorizationUtils authorizationUtils,
-                          NotificationService notificationService) {
+                          NotificationService notificationService,
+                          Clock clock) {
         this.ratingRepository = ratingRepository;
         this.tradeProposalRepository = tradeProposalRepository;
         this.usuarioRepository = usuarioRepository;
         this.authorizationUtils = authorizationUtils;
         this.notificationService = notificationService;
+        this.clock = clock;
     }
 
     public RatingResponseDto crearRating(RatingRequestDto requestDTO) {
@@ -108,7 +111,7 @@ public class RatingService {
         if (!rating.getReviewer().getId().equals(reviewer.getId())) {
             throw new ForbiddenOperationException("Solo quien emitio el rating puede editarlo");
         }
-        if (rating.getCreatedAt().plus(RATING_EDIT_WINDOW).isBefore(LocalDateTime.now())) {
+        if (rating.getCreatedAt().plus(RATING_EDIT_WINDOW).isBefore(LocalDateTime.now(clock))) {
             throw new RatingNotAllowedException("La ventana de edicion del rating ya expiro");
         }
 
@@ -123,7 +126,7 @@ public class RatingService {
     public List<RatingResponseDto> listarRatings() {
         return ratingRepository.findAll().stream()
                 .map(this::convertirAResponseDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<RatingResponseDto> obtenerRatingsPorUsuario(Long usuarioId) {
@@ -132,7 +135,7 @@ public class RatingService {
         }
         return ratingRepository.findByReviewedUserId(usuarioId).stream()
                 .map(this::convertirAResponseDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public RatingReputationDto getReputation(Long usuarioId) {
@@ -175,7 +178,7 @@ public class RatingService {
         LocalDateTime completedAt = tradeProposal.getUpdatedAt() != null
                 ? tradeProposal.getUpdatedAt()
                 : tradeProposal.getCreatedAt();
-        if (completedAt != null && completedAt.plus(RATING_CREATION_WINDOW).isBefore(LocalDateTime.now())) {
+        if (completedAt != null && completedAt.plus(RATING_CREATION_WINDOW).isBefore(LocalDateTime.now(clock))) {
             throw new RatingNotAllowedException("La ventana para calificar este intercambio ya expiro");
         }
     }

@@ -5,9 +5,7 @@ import com.dbp.proyectobackendmarketexchange.usuario.application.UsuarioControll
 import com.dbp.proyectobackendmarketexchange.usuario.domain.UsuarioService;
 import com.dbp.proyectobackendmarketexchange.usuario.dto.UsuarioRequestDto;
 import com.dbp.proyectobackendmarketexchange.usuario.dto.UsuarioResponseDto;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -28,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @AutoConfigureMockMvc(addFilters = false)  // Deshabilitar filtros de seguridad en pruebas
 @WebMvcTest(UsuarioController.class)
-public class UsuarioControllerTest {
+class UsuarioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -43,7 +41,7 @@ public class UsuarioControllerTest {
 
 
     @Test
-    public void testObtenerUsuarioPorId() throws Exception {
+    void testObtenerUsuarioPorId() throws Exception {
         UsuarioResponseDto usuarioResponseDto = new UsuarioResponseDto();
         usuarioResponseDto.setId(1L);
         usuarioResponseDto.setFirstname("Carlos");
@@ -62,7 +60,7 @@ public class UsuarioControllerTest {
     }
 
     @Test
-    public void testListarUsuarios() throws Exception {
+    void testListarUsuarios() throws Exception {
         UsuarioResponseDto usuario1 = new UsuarioResponseDto();
         usuario1.setId(1L);
         usuario1.setFirstname("Carlos");
@@ -89,7 +87,7 @@ public class UsuarioControllerTest {
     }
 
     @Test
-    public void testActualizarUsuario() throws Exception {
+    void testActualizarUsuario() throws Exception {
         UsuarioRequestDto requestDto = new UsuarioRequestDto();
         requestDto.setFirstname("Carlos");
         requestDto.setLastname("Villegas");
@@ -113,7 +111,7 @@ public class UsuarioControllerTest {
     }
 
     @Test
-    public void testEliminarUsuario() throws Exception {
+    void testEliminarUsuario() throws Exception {
         doNothing().when(usuarioService).eliminarUsuario(anyLong());
 
         mockMvc.perform(delete("/usuarios/1")
@@ -124,7 +122,7 @@ public class UsuarioControllerTest {
     }
 
     @Test
-    public void testGetMyInfo() throws Exception {
+    void testGetMyInfo() throws Exception {
         UsuarioResponseDto usuarioResponseDto = new UsuarioResponseDto();
         usuarioResponseDto.setId(1L);
         usuarioResponseDto.setFirstname("Carlos");

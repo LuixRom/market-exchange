@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { AuthResponse } from "../interfaces/auth/AuthResponse";
 import extractRoleFromToken from "../jwt/jwt";
 import Api from "../apis/api";
@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextType>({
     logout: () => {}
 });
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [refreshToken, setRefreshToken] = useState<string | null>(null);
@@ -36,9 +36,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [emailVerified, setEmailVerified] = useState(false);
 
     useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-        const storedRefreshToken = localStorage.getItem("refreshToken");
-        const storedEmailVerified = localStorage.getItem("emailVerified") === "true";
+        const token = sessionStorage.getItem("accessToken");
+        const storedRefreshToken = sessionStorage.getItem("refreshToken");
+        const storedEmailVerified = sessionStorage.getItem("emailVerified") === "true";
         if (token) {
             setAccessToken(token);
             setRefreshToken(storedRefreshToken);
@@ -48,26 +48,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, []);
 
-    function saveUser(userData: AuthResponse) {
+    const saveUser = useCallback((userData: AuthResponse) => {
         const token = userData.token;
         if (!token) {
             return;
         }
         setAccessToken(token);
-        localStorage.setItem("accessToken", token);
+        sessionStorage.setItem("accessToken", token);
         if (userData.refreshToken) {
             setRefreshToken(userData.refreshToken);
-            localStorage.setItem("refreshToken", userData.refreshToken);
+            sessionStorage.setItem("refreshToken", userData.refreshToken);
         }
         const verified = userData.emailVerified ?? true;
         setEmailVerified(verified);
-        localStorage.setItem("emailVerified", String(verified));
+        sessionStorage.setItem("emailVerified", String(verified));
         setIsAuthenticated(true);
         setRole(extractRoleFromToken(token) || "USER");
-    }
+    }, []);
 
-    async function logout() {
-        const tokenToRevoke = refreshToken || localStorage.getItem("refreshToken");
+    const logout = useCallback(async () => {
+        const tokenToRevoke = refreshToken || sessionStorage.getItem("refreshToken");
         if (tokenToRevoke) {
             try {
                 await logoutSession(tokenToRevoke);
@@ -78,24 +78,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setAccessToken(null);
         setRefreshToken(null);
         setRole(null);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("emailVerified");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("emailVerified");
         setIsAuthenticated(false);
         setEmailVerified(false);
         Api.clearAuthorization();
-    }
+    }, [refreshToken]);
 
-    function getAccessToken() {
-        return accessToken;
-    }
+    const getAccessToken = useCallback(() => accessToken, [accessToken]);
 
-    function getRefreshToken() {
-        return refreshToken;
-    }
+    const getRefreshToken = useCallback(() => refreshToken, [refreshToken]);
+
+    const contextValue = useMemo(
+        () => ({ isAuthenticated, role, emailVerified, getAccessToken, getRefreshToken, saveUser, logout }),
+        [isAuthenticated, role, emailVerified, getAccessToken, getRefreshToken, saveUser, logout]
+    );
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, role, emailVerified, getAccessToken, getRefreshToken, saveUser, logout }}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

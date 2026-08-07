@@ -75,7 +75,7 @@ const footerLinks = [
   { label: "Contacto", href: "#contacto" },
 ];
 
-function SectionBadge({ children }: { children: ReactNode }) {
+function SectionBadge({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <span className="inline-flex items-center gap-2 bg-cream-dark text-primary text-caption font-bold uppercase px-4 py-2 rounded-pill">
       {children}
@@ -466,13 +466,13 @@ export default function HomePage() {
               <div id="contacto">
                 <h3 className="font-bold text-gray-900 mb-4">Síguenos</h3>
                 <div className="flex items-center gap-3">
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     aria-label="Facebook de Market Exchange"
                     className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <FaFacebookF size={14} aria-hidden="true" />
-                  </a>
+                  </button>
                   <a
                     href="https://www.instagram.com/yeru_peru/"
                     aria-label="Instagram de Market Exchange"
@@ -480,13 +480,13 @@ export default function HomePage() {
                   >
                     <FaInstagram size={16} aria-hidden="true" />
                   </a>
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     aria-label="WhatsApp de Market Exchange"
                     className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <FaWhatsapp size={16} aria-hidden="true" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>

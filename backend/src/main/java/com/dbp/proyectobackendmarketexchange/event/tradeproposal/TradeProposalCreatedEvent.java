@@ -7,7 +7,7 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class TradeProposalCreatedEvent extends ApplicationEvent {
 
-    private final TradeProposal tradeProposal;
+    private final transient TradeProposal tradeProposal;
 
     public TradeProposalCreatedEvent(Object source, TradeProposal tradeProposal) {
         super(source);

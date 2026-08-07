@@ -41,6 +41,8 @@ public class ItemCreatedListener {
         context.setVariable("itemName", itemName);
         context.setVariable("categoryName", categoryName);
         context.setVariable("emailUsuario", emailUsuario);
+        context.setVariable("nombre", event.getItem().getUsuario().getFirstname());
+        context.setVariable("myPublicationsUrl", "http://localhost:5173/dashboard/cuenta?tab=items");
 
         // Procesar la plantilla HTML de Thymeleaf
         String contenidoHtml = templateEngine.process("item-created-email", context);

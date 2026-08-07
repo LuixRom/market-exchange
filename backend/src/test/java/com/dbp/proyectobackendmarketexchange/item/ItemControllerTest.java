@@ -9,9 +9,7 @@ import com.dbp.proyectobackendmarketexchange.item.infrastructure.ItemRepository;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageProvider;
 import com.dbp.proyectobackendmarketexchange.storage.domain.StorageService;
 import com.dbp.proyectobackendmarketexchange.storage.infrastructure.StorageServiceRegistry;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -32,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @AutoConfigureMockMvc(addFilters = false)  // Deshabilitar filtros de seguridad en pruebas
 @WebMvcTest(ItemController.class)
-public class ItemControllerTest {
+class ItemControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -51,7 +49,7 @@ public class ItemControllerTest {
 
 
     @Test
-    public void testCreateItem() throws Exception {
+    void testCreateItem() throws Exception {
         // Preparar datos
         ItemResponseDto responseDto = new ItemResponseDto();
         responseDto.setId(1L);
@@ -62,8 +60,8 @@ public class ItemControllerTest {
         // Realizar la solicitud POST y verificar la respuesta
         // El controlador consume multipart/form-data (ItemRequestDto tiene un campo MultipartFile)
         mockMvc.perform(multipart("/item")
-                        .param("category_id", "1")
-                        .param("user_id", "1"))
+                        .param("categoryId", "1")
+                        .param("userId", "1"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1L));
 
@@ -72,7 +70,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testApproveItem() throws Exception {
+    void testApproveItem() throws Exception {
         // Preparar datos
         ItemResponseDto responseDto = new ItemResponseDto();
         responseDto.setId(1L);
@@ -91,7 +89,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testUpdateItem() throws Exception {
+    void testUpdateItem() throws Exception {
         // Preparar datos
         ItemResponseDto responseDto = new ItemResponseDto();
         responseDto.setId(1L);
@@ -111,7 +109,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testGetItem() throws Exception {
+    void testGetItem() throws Exception {
         // Preparar datos
         ItemResponseDto responseDto = new ItemResponseDto();
         responseDto.setId(1L);
@@ -129,7 +127,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testGetAllItems() throws Exception {
+    void testGetAllItems() throws Exception {
         // Preparar datos
         ItemResponseDto item1 = new ItemResponseDto();
         item1.setId(1L);
@@ -152,7 +150,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testDeleteItem() throws Exception {
+    void testDeleteItem() throws Exception {
         // Simular comportamiento del servicio
         doNothing().when(itemService).deleteItem(1L);
 
@@ -165,7 +163,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testGetItemsByCategory() throws Exception {
+    void testGetItemsByCategory() throws Exception {
         // Preparar datos
         ItemResponseDto item1 = new ItemResponseDto();
         item1.setId(1L);
@@ -188,7 +186,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testGetItemsByUser() throws Exception {
+    void testGetItemsByUser() throws Exception {
         // Preparar datos
         ItemResponseDto item1 = new ItemResponseDto();
         item1.setId(1L);
@@ -211,7 +209,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testGetUserItems() throws Exception {
+    void testGetUserItems() throws Exception {
         // Preparar datos
         ItemResponseDto item1 = new ItemResponseDto();
         item1.setId(1L);
@@ -234,7 +232,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testGetImage_NotFound_WhenNoImageKey() throws Exception {
+    void testGetImage_NotFound_WhenNoImageKey() throws Exception {
         com.dbp.proyectobackendmarketexchange.item.domain.Item item = new com.dbp.proyectobackendmarketexchange.item.domain.Item();
         item.setId(1L);
 
@@ -247,7 +245,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testGetImage_Success() throws Exception {
+    void testGetImage_Success() throws Exception {
         com.dbp.proyectobackendmarketexchange.item.domain.Item item = new com.dbp.proyectobackendmarketexchange.item.domain.Item();
         item.setId(1L);
         item.setImageKey("items/abc.jpg");
@@ -265,7 +263,7 @@ public class ItemControllerTest {
     }
 
     @Test
-    public void testReplaceItemImage() throws Exception {
+    void testReplaceItemImage() throws Exception {
         ItemResponseDto responseDto = new ItemResponseDto();
         responseDto.setId(1L);
 

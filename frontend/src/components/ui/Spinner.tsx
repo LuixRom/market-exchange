@@ -6,9 +6,9 @@ interface SpinnerProps {
   label?: string;
 }
 
-export function Spinner({ className, label = "Cargando..." }: SpinnerProps) {
+export function Spinner({ className, label = "Cargando..." }: Readonly<SpinnerProps>) {
   return (
-    <div role="status" className="flex flex-col items-center justify-center gap-3 py-10 text-gray-500">
+    <output className="flex flex-col items-center justify-center gap-3 py-10 text-gray-500">
       <motion.span
         aria-hidden="true"
         className={cn(
@@ -19,6 +19,6 @@ export function Spinner({ className, label = "Cargando..." }: SpinnerProps) {
         transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
       />
       {label && <span className="text-sm">{label}</span>}
-    </div>
+    </output>
   );
 }

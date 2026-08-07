@@ -23,9 +23,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class RatingServiceTest {
+class RatingServiceTest {
 
     @Mock
     private RatingRepository ratingRepository;
@@ -50,6 +52,9 @@ public class RatingServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
+
     @InjectMocks
     private RatingService ratingService;
 
@@ -58,7 +63,7 @@ public class RatingServiceTest {
     private TradeProposal completedTrade;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
 
         proposer = new Usuario();
@@ -82,7 +87,7 @@ public class RatingServiceTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         SecurityContextHolder.clearContext();
     }
 
@@ -93,7 +98,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testCrearRating_ProposerRatesReceiver() {
+    void testCrearRating_ProposerRatesReceiver() {
         authenticateAs(proposer);
 
         RatingRequestDto requestDto = new RatingRequestDto();
@@ -119,7 +124,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testCrearRating_ReceiverRatesProposer() {
+    void testCrearRating_ReceiverRatesProposer() {
         authenticateAs(receiver);
 
         RatingRequestDto requestDto = new RatingRequestDto();
@@ -139,7 +144,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testCrearRating_RejectedWhenNotCompleted() {
+    void testCrearRating_RejectedWhenNotCompleted() {
         authenticateAs(proposer);
         completedTrade.setStatus(TradeStatus.ACCEPTED);
 
@@ -154,7 +159,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testCrearRating_ReviewerOutsideTrade_Forbidden() {
+    void testCrearRating_ReviewerOutsideTrade_Forbidden() {
         Usuario outsider = new Usuario();
         outsider.setId(99L);
         outsider.setEmail("outsider@example.com");
@@ -171,7 +176,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testCrearRating_DuplicateRejected() {
+    void testCrearRating_DuplicateRejected() {
         authenticateAs(proposer);
 
         RatingRequestDto requestDto = new RatingRequestDto();
@@ -186,7 +191,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testListarRatings() {
+    void testListarRatings() {
         Rating rating1 = new Rating();
         rating1.setId(1L);
         rating1.setScore(5);
@@ -204,7 +209,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testObtenerRatingsPorUsuario() {
+    void testObtenerRatingsPorUsuario() {
         when(usuarioRepository.existsById(2L)).thenReturn(true);
         when(ratingRepository.findByReviewedUserId(2L)).thenReturn(List.of());
 
@@ -214,7 +219,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testGetReputation() {
+    void testGetReputation() {
         when(usuarioRepository.existsById(2L)).thenReturn(true);
         when(ratingRepository.findAverageScoreByReviewedUserId(2L)).thenReturn(Optional.of(4.5));
         when(ratingRepository.countByReviewedUserId(2L)).thenReturn(2L);
@@ -227,7 +232,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testDeleteRating_AdminAllowed() {
+    void testDeleteRating_AdminAllowed() {
         Rating rating = new Rating();
         rating.setId(1L);
         rating.setReviewedUser(receiver);
@@ -241,7 +246,7 @@ public class RatingServiceTest {
     }
 
     @Test
-    public void testDeleteRating_NonAdminForbidden() {
+    void testDeleteRating_NonAdminForbidden() {
         Rating rating = new Rating();
         rating.setId(1L);
         rating.setReviewedUser(receiver);

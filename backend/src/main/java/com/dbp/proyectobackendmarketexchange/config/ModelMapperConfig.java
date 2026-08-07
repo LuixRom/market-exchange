@@ -18,9 +18,8 @@ public class ModelMapperConfig {
         modelMapper.getConfiguration().setAmbiguityIgnored(true);
 
         // Agregar la configuración para mapear userName de Item a ItemResponseDto
-        modelMapper.typeMap(Item.class, ItemResponseDto.class).addMappings(mapper -> {
-            mapper.map(src -> src.getUsuario().getEmail(), ItemResponseDto::setUserName);
-        });
+        modelMapper.typeMap(Item.class, ItemResponseDto.class).addMappings(mapper ->
+                mapper.map(src -> src.getUsuario().getEmail(), ItemResponseDto::setUserName));
 
         return modelMapper;
     }

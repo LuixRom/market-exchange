@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Getter
@@ -42,7 +43,8 @@ public class AccountToken {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        // JPA entities aren't Spring beans, so a Clock can't be injected here.
+        this.createdAt = LocalDateTime.now(Clock.systemDefaultZone());
     }
 
     public boolean isActive(LocalDateTime now) {

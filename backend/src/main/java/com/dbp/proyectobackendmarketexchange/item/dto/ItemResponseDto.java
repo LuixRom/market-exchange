@@ -2,6 +2,7 @@ package com.dbp.proyectobackendmarketexchange.item.dto;
 
 import com.dbp.proyectobackendmarketexchange.item.domain.Condition;
 import com.dbp.proyectobackendmarketexchange.item.domain.ItemStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,9 +31,11 @@ public class ItemResponseDto {
     private String imageUrl;
     private List<String> imageUrls;
 
-    private Long user_id;
+    @JsonProperty("user_id")
+    private Long userId;
 
-    private Long category_id;
+    @JsonProperty("category_id")
+    private Long categoryId;
 
     private boolean favorite;
 

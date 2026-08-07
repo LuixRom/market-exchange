@@ -32,12 +32,12 @@ class CategoryServiceTest {
     private CategoryService categoryService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testGetAllCategories() {
+    void testGetAllCategories() {
         Category category1 = new Category();
         category1.setId(1L);
         category1.setName("Electronics");
@@ -70,7 +70,7 @@ class CategoryServiceTest {
     }
 
     @Test
-    public void testGetCategoryById_Success() {
+    void testGetCategoryById_Success() {
         Category category = new Category();
         category.setId(1L);
         category.setName("Electronics");
@@ -93,7 +93,7 @@ class CategoryServiceTest {
     }
 
     @Test
-    public void testGetCategoryById_NotFound() {
+    void testGetCategoryById_NotFound() {
         when(categoryRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> categoryService.getCategoryById(1L));
@@ -102,7 +102,7 @@ class CategoryServiceTest {
     }
 
     @Test
-    public void testCreateCategory() {
+    void testCreateCategory() {
         CategoryRequestDto requestDto = new CategoryRequestDto();
         requestDto.setName("Home Appliances");
 
@@ -127,7 +127,7 @@ class CategoryServiceTest {
     }
 
     @Test
-    public void testUpdateCategory_Success() {
+    void testUpdateCategory_Success() {
         Category category = new Category();
         category.setId(1L);
         category.setName("Electronics");
@@ -154,7 +154,7 @@ class CategoryServiceTest {
     }
 
     @Test
-    public void testUpdateCategory_NotFound() {
+    void testUpdateCategory_NotFound() {
         CategoryRequestDto requestDto = new CategoryRequestDto();
         requestDto.setName("Non-existent");
 
@@ -166,7 +166,7 @@ class CategoryServiceTest {
     }
 
     @Test
-    public void testDeleteCategory_Success() {
+    void testDeleteCategory_Success() {
         doNothing().when(categoryRepository).deleteById(1L);
 
         categoryService.deleteCategory(1L);

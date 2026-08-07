@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaBell, FaBoxOpen, FaCheckCircle, FaEnvelope, FaExchangeAlt } from "react-icons/fa";
 import { DropdownMenu, DropdownMenuItem } from "./ui/DropdownMenu";
@@ -17,6 +17,11 @@ function notificationPath(entry: NotificationResponse) {
     if (entry.tradeProposalId) return `/dashboard/agreements/${entry.tradeProposalId}`;
     if (entry.itemId) return `/dashboard/item/${entry.itemId}`;
     return "/dashboard/cuenta";
+}
+
+function addNotification(current: NotificationResponse[], entry: NotificationResponse) {
+    if (current.some((existing) => existing.id === entry.id)) return current;
+    return [entry, ...current].slice(0, 20);
 }
 
 function formatNotificationTime(value?: string) {
@@ -72,16 +77,13 @@ export default function NotificationBell() {
         let agreementSubscription: { unsubscribe: () => void } | null = null;
         let active = true;
 
-        realtimeClient
-            .connect()
-            .then(() => {
+        async function subscribe() {
+            try {
+                await realtimeClient.connect();
                 if (!active) return;
 
                 notificationSubscription = realtimeClient.subscribeToNotifications((entry) => {
-                    setItems((current) => {
-                        if (current.some((existing) => existing.id === entry.id)) return current;
-                        return [entry, ...current].slice(0, 20);
-                    });
+                    setItems((current) => addNotification(current, entry));
                     if (!entry.read) {
                         setUnreadCount((current) => current + 1);
                     }
@@ -90,8 +92,12 @@ export default function NotificationBell() {
                 agreementSubscription = realtimeClient.subscribeToAgreementEvents(() => {
                     refreshNotifications().catch(() => undefined);
                 });
-            })
-            .catch(() => undefined);
+            } catch {
+                // El listado inicial ya se cargo via REST; el realtime es best-effort.
+            }
+        }
+
+        subscribe();
 
         return () => {
             active = false;
@@ -116,11 +122,45 @@ export default function NotificationBell() {
         }
     }
 
+    let listContent: ReactNode;
+    if (loading) {
+        listContent = <p className="px-3 py-6 text-center text-sm text-gray-500">Cargando...</p>;
+    } else if (visibleItems.length === 0) {
+        listContent = <p className="px-3 py-6 text-center text-sm text-gray-500">Sin notificaciones todavia.</p>;
+    } else {
+        listContent = visibleItems.map((entry) => (
+            <DropdownMenuItem
+                key={entry.id}
+                onSelect={() => openNotification(entry)}
+                className={`mb-1 flex gap-3 rounded-card p-3 ${
+                    entry.read ? "bg-white" : "bg-primary/5"
+                }`}
+            >
+                <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    {notificationIcon(entry.type)}
+                </span>
+                <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-gray-900">
+                        {entry.title}
+                    </span>
+                    <span className="mt-0.5 block line-clamp-2 text-xs text-gray-600">
+                        {entry.message}
+                    </span>
+                    <span className="mt-1 block text-[11px] text-gray-400">
+                        {formatNotificationTime(entry.createdAt)}
+                    </span>
+                </span>
+                {!entry.read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+            </DropdownMenuItem>
+        ));
+    }
+
     return (
         <DropdownMenu
             align="end"
             trigger={
                 <button
+                    type="button"
                     className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary transition-all hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     aria-label="Notificaciones"
                 >
@@ -147,37 +187,7 @@ export default function NotificationBell() {
                 </div>
 
                 <div className="mt-2 max-h-96 overflow-y-auto">
-                    {loading ? (
-                        <p className="px-3 py-6 text-center text-sm text-gray-500">Cargando...</p>
-                    ) : visibleItems.length === 0 ? (
-                        <p className="px-3 py-6 text-center text-sm text-gray-500">Sin notificaciones todavia.</p>
-                    ) : (
-                        visibleItems.map((entry) => (
-                            <DropdownMenuItem
-                                key={entry.id}
-                                onSelect={() => openNotification(entry)}
-                                className={`mb-1 flex gap-3 rounded-card p-3 ${
-                                    entry.read ? "bg-white" : "bg-primary/5"
-                                }`}
-                            >
-                                <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                    {notificationIcon(entry.type)}
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-sm font-bold text-gray-900">
-                                        {entry.title}
-                                    </span>
-                                    <span className="mt-0.5 block line-clamp-2 text-xs text-gray-600">
-                                        {entry.message}
-                                    </span>
-                                    <span className="mt-1 block text-[11px] text-gray-400">
-                                        {formatNotificationTime(entry.createdAt)}
-                                    </span>
-                                </span>
-                                {!entry.read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                            </DropdownMenuItem>
-                        ))
-                    )}
+                    {listContent}
                 </div>
             </div>
         </DropdownMenu>

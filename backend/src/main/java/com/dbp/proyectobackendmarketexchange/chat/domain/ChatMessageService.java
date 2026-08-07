@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,17 +27,20 @@ public class ChatMessageService {
     private final UsuarioRepository usuarioRepository;
     private final NotificationService notificationService;
     private final RealtimeMessagingService realtimeMessagingService;
+    private final Clock clock;
 
     public ChatMessageService(ChatMessageRepository chatMessageRepository,
                               TradeProposalRepository tradeProposalRepository,
                               UsuarioRepository usuarioRepository,
                               NotificationService notificationService,
-                              RealtimeMessagingService realtimeMessagingService) {
+                              RealtimeMessagingService realtimeMessagingService,
+                              Clock clock) {
         this.chatMessageRepository = chatMessageRepository;
         this.tradeProposalRepository = tradeProposalRepository;
         this.usuarioRepository = usuarioRepository;
         this.notificationService = notificationService;
         this.realtimeMessagingService = realtimeMessagingService;
+        this.clock = clock;
     }
 
     public List<ChatMessageResponseDto> listMessages(Long tradeProposalId) {
@@ -45,7 +49,7 @@ public class ChatMessageService {
         List<ChatMessage> messages = chatMessageRepository.findByTradeProposalIdOrderByCreatedAtAsc(tradeProposal.getId());
         messages.stream()
                 .filter(message -> !message.getSender().getId().equals(current.getId()) && message.getReadAt() == null)
-                .forEach(message -> message.setReadAt(LocalDateTime.now()));
+                .forEach(message -> message.setReadAt(LocalDateTime.now(clock)));
         chatMessageRepository.saveAll(messages);
         return messages.stream().map(this::mapToDto).toList();
     }

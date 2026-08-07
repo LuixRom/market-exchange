@@ -19,15 +19,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public Usuario loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository
+        return usuarioRepository
                 .findByEmail(EmailNormalizer.normalize(username))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con el email: " + username));
-
-        return usuario;  // Asegúrate de que Usuario implemente UserDetails
     }
 
 
-    @Bean(name = "UserDetailsService")
+    @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
             Usuario user = usuarioRepository

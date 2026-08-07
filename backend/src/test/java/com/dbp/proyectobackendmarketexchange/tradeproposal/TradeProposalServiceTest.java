@@ -29,10 +29,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -43,7 +45,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-public class TradeProposalServiceTest {
+class TradeProposalServiceTest {
 
     @Mock
     private ItemRepository itemRepository;
@@ -69,6 +71,9 @@ public class TradeProposalServiceTest {
     @Mock
     private RealtimeMessagingService realtimeMessagingService;
 
+    @Spy
+    private Clock clock = Clock.systemDefaultZone();
+
     @InjectMocks
     private TradeProposalService tradeProposalService;
 
@@ -76,7 +81,7 @@ public class TradeProposalServiceTest {
     private Usuario receiver;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
 
         proposer = new Usuario();
@@ -89,7 +94,7 @@ public class TradeProposalServiceTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         SecurityContextHolder.clearContext();
     }
 
@@ -111,7 +116,7 @@ public class TradeProposalServiceTest {
     // ---- createTradeProposal ----
 
     @Test
-    public void testCreateTradeProposal_Success() {
+    void testCreateTradeProposal_Success() {
         authenticateAs(proposer);
 
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
@@ -144,7 +149,7 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testCreateTradeProposal_NotOwnerOfOfferedItem() {
+    void testCreateTradeProposal_NotOwnerOfOfferedItem() {
         authenticateAs(proposer);
 
         Item offeredItem = buildItem(10L, receiver, ItemStatus.APPROVED); // no es del proposer
@@ -162,7 +167,7 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testCreateTradeProposal_OfferedItemNotApproved() {
+    void testCreateTradeProposal_OfferedItemNotApproved() {
         authenticateAs(proposer);
 
         Item offeredItem = buildItem(10L, proposer, ItemStatus.PENDING_REVIEW);
@@ -179,7 +184,7 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testCreateTradeProposal_RequestedItemNotApproved() {
+    void testCreateTradeProposal_RequestedItemNotApproved() {
         authenticateAs(proposer);
 
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
@@ -196,7 +201,7 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testCreateTradeProposal_SameUser() {
+    void testCreateTradeProposal_SameUser() {
         authenticateAs(proposer);
 
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
@@ -213,7 +218,7 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testCreateTradeProposal_SameItem() {
+    void testCreateTradeProposal_SameItem() {
         authenticateAs(proposer);
 
         TradeProposalRequestDto requestDto = new TradeProposalRequestDto();
@@ -225,7 +230,7 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testCreateTradeProposal_DuplicateActiveProposal() {
+    void testCreateTradeProposal_DuplicateActiveProposal() {
         authenticateAs(proposer);
 
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
@@ -266,7 +271,7 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testAcceptTradeProposal_Success() {
+    void testAcceptTradeProposal_Success() {
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
         Item requestedItem = buildItem(20L, receiver, ItemStatus.APPROVED);
         TradeProposal proposal = buildPendingProposal(offeredItem, requestedItem);
@@ -293,10 +298,9 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testAcceptTradeProposal_ForbiddenWhenNotReceiverNorAdmin() {
+    void testAcceptTradeProposal_ForbiddenWhenNotReceiverNorAdmin() {
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
         Item requestedItem = buildItem(20L, receiver, ItemStatus.APPROVED);
-        TradeProposal proposal = buildPendingProposal(offeredItem, requestedItem);
 
         TradeProposalSummary summary = buildSummary(offeredItem, requestedItem, 2L);
         when(tradeProposalRepository.findSummaryById(100L)).thenReturn(Optional.of(summary));
@@ -307,10 +311,9 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testAcceptTradeProposal_ConflictWhenAlreadyCancelledByCompetitor() {
+    void testAcceptTradeProposal_ConflictWhenAlreadyCancelledByCompetitor() {
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
         Item requestedItem = buildItem(20L, receiver, ItemStatus.APPROVED);
-        TradeProposal proposal = buildPendingProposal(offeredItem, requestedItem);
 
         TradeProposal alreadyCancelled = buildPendingProposal(offeredItem, requestedItem);
         alreadyCancelled.setStatus(TradeStatus.CANCELLED);
@@ -329,7 +332,7 @@ public class TradeProposalServiceTest {
     // ---- rejectTradeProposal ----
 
     @Test
-    public void testRejectTradeProposal_Success() {
+    void testRejectTradeProposal_Success() {
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
         Item requestedItem = buildItem(20L, receiver, ItemStatus.APPROVED);
         TradeProposal proposal = buildPendingProposal(offeredItem, requestedItem);
@@ -347,10 +350,9 @@ public class TradeProposalServiceTest {
     }
 
     @Test
-    public void testRejectTradeProposal_ForbiddenWhenNotReceiverNorAdmin() {
+    void testRejectTradeProposal_ForbiddenWhenNotReceiverNorAdmin() {
         Item offeredItem = buildItem(10L, proposer, ItemStatus.APPROVED);
         Item requestedItem = buildItem(20L, receiver, ItemStatus.APPROVED);
-        TradeProposal proposal = buildPendingProposal(offeredItem, requestedItem);
 
         TradeProposalSummary summary = buildSummary(offeredItem, requestedItem, 2L);
         when(tradeProposalRepository.findSummaryById(100L)).thenReturn(Optional.of(summary));

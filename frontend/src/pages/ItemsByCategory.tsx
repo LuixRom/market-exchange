@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { ItemResponse } from "../interfaces/item/ItemResponse";
 import { item } from "../services/item/item";
+import { usuario } from "../services/user/user";
 import { fetchItemImage } from "../services/image/image";
 import { useAuth } from "../context/AuthProvider";
 import { Card } from "../components/ui/Card";
@@ -10,16 +11,35 @@ import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
 import { staggerChildren, slideUp } from "../lib/motion";
 
+async function loadItemImage(
+  itemData: ItemResponse,
+  accessToken: string,
+  setImageUrls: Dispatch<SetStateAction<{ [key: number]: string }>>
+) {
+  try {
+    const url = await fetchItemImage(itemData, accessToken);
+    setImageUrls((prev) => ({ ...prev, [itemData.id]: url }));
+  } catch {
+    setImageUrls((prev) => ({ ...prev, [itemData.id]: "/default-placeholder.png" }));
+  }
+}
+
 export default function CategoryItemsPage() {
   const { role } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [items, setItems] = useState<ItemResponse[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [imageUrls, setImageUrls] = useState<{ [key: number]: string }>({});
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    usuario.getMyInfo().then((info) => setCurrentUserId(info.id)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const fetchItems = async () => {
+      setLoading(true);
       try {
         const itemsData = await item.getCatalog({
           categoryId: Number(id),
@@ -30,20 +50,10 @@ export default function CategoryItemsPage() {
         });
         setItems(itemsData.content);
 
-        const accessToken = localStorage.getItem("accessToken");
-        if (!accessToken) return;
-
-        const images = await Promise.all(
-          itemsData.content.map(async (itemData) => {
-            try {
-              const imageUrl = await fetchItemImage(itemData, accessToken);
-              return { id: itemData.id, url: imageUrl };
-            } catch {
-              return { id: itemData.id, url: "/default-placeholder.png" };
-            }
-          })
-        );
-        setImageUrls(images.reduce((acc, img) => ({ ...acc, [img.id]: img.url }), {}));
+        const accessToken = sessionStorage.getItem("accessToken");
+        if (accessToken && itemsData.content.length > 0) {
+          itemsData.content.forEach((itemData) => loadItemImage(itemData, accessToken, setImageUrls));
+        }
       } catch (error) {
         console.error("Error al obtener items:", error);
       } finally {
@@ -68,11 +78,12 @@ export default function CategoryItemsPage() {
       {items.map((itemData) => (
         <motion.div key={itemData.id} variants={slideUp}>
           <Card className="overflow-hidden h-full flex flex-col">
-            <div className="w-full h-48 bg-gray-50 border-b border-gray-100 flex items-center justify-center overflow-hidden">
+            <div className={`w-full h-48 bg-gray-50 border-b border-gray-100 flex items-center justify-center overflow-hidden ${!imageUrls[itemData.id] ? "animate-pulse" : ""}`}>
               <img
                 src={imageUrls[itemData.id] || "/default-placeholder.png"}
                 alt={itemData.name}
                 className="w-full h-full object-contain p-3"
+                loading="lazy"
               />
             </div>
             <div className="p-4 flex flex-col flex-1">
@@ -96,12 +107,18 @@ export default function CategoryItemsPage() {
                   Ver detalle
                 </Button>
                 {role === "USER" && (
-                  <Button
-                    onClick={() => navigate(`/dashboard/agreements/item/${itemData.id}`)}
-                    className="w-full text-xs"
-                  >
-                    Tradear
-                  </Button>
+                  itemData.user_id === currentUserId ? (
+                    <span className="w-full py-2 px-3 text-center text-xs font-bold text-gray-500 bg-gray-100 rounded-xl flex items-center justify-center border border-gray-200">
+                      Tu publicación
+                    </span>
+                  ) : (
+                    <Button
+                      onClick={() => navigate(`/dashboard/agreements/item/${itemData.id}`)}
+                      className="w-full text-xs"
+                    >
+                      Tradear
+                    </Button>
+                  )
                 )}
               </div>
             </div>

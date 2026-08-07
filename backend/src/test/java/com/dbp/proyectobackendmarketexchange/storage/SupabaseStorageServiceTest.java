@@ -10,6 +10,8 @@ import com.dbp.proyectobackendmarketexchange.storage.infrastructure.SupabaseStor
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -163,32 +165,12 @@ class SupabaseStorageServiceTest {
         assertThrows(StorageException.class, () -> service.store(file, "items"));
     }
 
-    @Test
-    void testStore_DangerousDirectory_ParentTraversal_Throws() {
+    @ParameterizedTest
+    @ValueSource(strings = {"../items", "/items", "items\\", "items//images"})
+    void testStore_DangerousDirectory_Throws(String directory) {
         MockMultipartFile file = new MockMultipartFile("image", "foto.jpg", "image/jpeg", JPEG_BYTES);
 
-        assertThrows(InvalidStorageFileException.class, () -> storageService.store(file, "../items"));
-    }
-
-    @Test
-    void testStore_DangerousDirectory_LeadingSlash_Throws() {
-        MockMultipartFile file = new MockMultipartFile("image", "foto.jpg", "image/jpeg", JPEG_BYTES);
-
-        assertThrows(InvalidStorageFileException.class, () -> storageService.store(file, "/items"));
-    }
-
-    @Test
-    void testStore_DangerousDirectory_TrailingBackslash_Throws() {
-        MockMultipartFile file = new MockMultipartFile("image", "foto.jpg", "image/jpeg", JPEG_BYTES);
-
-        assertThrows(InvalidStorageFileException.class, () -> storageService.store(file, "items\\"));
-    }
-
-    @Test
-    void testStore_DangerousDirectory_DoubleSlash_Throws() {
-        MockMultipartFile file = new MockMultipartFile("image", "foto.jpg", "image/jpeg", JPEG_BYTES);
-
-        assertThrows(InvalidStorageFileException.class, () -> storageService.store(file, "items//images"));
+        assertThrows(InvalidStorageFileException.class, () -> storageService.store(file, directory));
     }
 
     @Test

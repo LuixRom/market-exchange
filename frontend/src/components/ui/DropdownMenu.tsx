@@ -13,7 +13,7 @@ export function DropdownMenu({
   trigger,
   children,
   align = "end",
-}: DropdownMenuProps) {
+}: Readonly<DropdownMenuProps>) {
   return (
     <RadixDropdown.Root>
       <RadixDropdown.Trigger asChild>{trigger}</RadixDropdown.Trigger>
@@ -45,7 +45,7 @@ export function DropdownMenuItem({
   onSelect,
   className,
   asChild,
-}: DropdownMenuItemProps) {
+}: Readonly<DropdownMenuItemProps>) {
   return (
     <RadixDropdown.Item
       asChild={asChild}

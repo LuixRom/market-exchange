@@ -32,13 +32,13 @@ class TradeProposalControllerTest {
     private TradeProposalController tradeProposalController;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(tradeProposalController).build();
     }
 
     @Test
-    public void testGetAllTradeProposals() throws Exception {
+    void testGetAllTradeProposals() throws Exception {
         TradeProposalResponseDto dto1 = new TradeProposalResponseDto();
         dto1.setId(1L);
         dto1.setStatus(TradeStatus.PENDING);
@@ -61,7 +61,7 @@ class TradeProposalControllerTest {
     }
 
     @Test
-    public void testGetTradeProposalById() throws Exception {
+    void testGetTradeProposalById() throws Exception {
         TradeProposalResponseDto dto = new TradeProposalResponseDto();
         dto.setId(1L);
         dto.setStatus(TradeStatus.PENDING);
@@ -77,7 +77,7 @@ class TradeProposalControllerTest {
     }
 
     @Test
-    public void testCreateTradeProposal() throws Exception {
+    void testCreateTradeProposal() throws Exception {
         TradeProposalRequestDto requestDto = new TradeProposalRequestDto();
         requestDto.setOfferedItemId(10L);
         requestDto.setRequestedItemId(20L);
@@ -99,7 +99,7 @@ class TradeProposalControllerTest {
     }
 
     @Test
-    public void testCreateTradeProposal_MissingFields_BadRequest() throws Exception {
+    void testCreateTradeProposal_MissingFields_BadRequest() throws Exception {
         TradeProposalRequestDto requestDto = new TradeProposalRequestDto();
 
         mockMvc.perform(post("/agreements")
@@ -111,7 +111,7 @@ class TradeProposalControllerTest {
     }
 
     @Test
-    public void testAcceptTradeProposal() throws Exception {
+    void testAcceptTradeProposal() throws Exception {
         TradeProposalResponseDto responseDto = new TradeProposalResponseDto();
         responseDto.setId(1L);
         responseDto.setStatus(TradeStatus.ACCEPTED);
@@ -127,7 +127,7 @@ class TradeProposalControllerTest {
     }
 
     @Test
-    public void testRejectTradeProposal() throws Exception {
+    void testRejectTradeProposal() throws Exception {
         TradeProposalResponseDto responseDto = new TradeProposalResponseDto();
         responseDto.setId(1L);
         responseDto.setStatus(TradeStatus.REJECTED);
@@ -143,7 +143,7 @@ class TradeProposalControllerTest {
     }
 
     @Test
-    public void testDeleteTradeProposal() throws Exception {
+    void testDeleteTradeProposal() throws Exception {
         doNothing().when(tradeProposalService).deleteTradeProposal(1L);
 
         mockMvc.perform(delete("/agreements/1"))
@@ -152,7 +152,7 @@ class TradeProposalControllerTest {
         verify(tradeProposalService, times(1)).deleteTradeProposal(1L);
     }
 
-    public static String asJsonString(final Object obj) {
+    static String asJsonString(final Object obj) {
         try {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj);
         } catch (Exception e) {

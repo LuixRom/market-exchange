@@ -15,7 +15,7 @@ class RealtimeClient {
     private activationPromise: Promise<void> | null = null;
 
     connect(onConnectionChange?: ConnectionCallback): Promise<void> {
-        const token = localStorage.getItem("accessToken");
+        const token = sessionStorage.getItem("accessToken");
 
         if (!token) {
             return Promise.reject(new Error("No hay token para conectar al WebSocket."));
