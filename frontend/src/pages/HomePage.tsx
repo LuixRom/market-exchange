@@ -10,9 +10,6 @@ import {
   FaPhone,
   FaEnvelope,
   FaMapMarkerAlt,
-  FaFacebookF,
-  FaInstagram,
-  FaWhatsapp,
   FaUser,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthProvider";
@@ -408,7 +405,7 @@ export default function HomePage() {
 
           {/* Footer */}
           <footer className="bg-cream-dark pt-16 pb-8">
-            <div className="max-w-container mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+            <div className="max-w-container mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
               <div>
                 <div className="flex items-center gap-2">
                   <img
@@ -445,12 +442,12 @@ export default function HomePage() {
                 </ul>
               </div>
 
-              <div>
+              <div id="contacto">
                 <h3 className="font-bold text-gray-900 mb-4">Contáctanos</h3>
                 <ul className="space-y-3 text-sm text-gray-600">
                   <li className="flex items-center gap-2">
                     <FaPhone aria-hidden="true" className="text-primary" />
-                    966 462 221
+                    999 999 999
                   </li>
                   <li className="flex items-center gap-2">
                     <FaEnvelope aria-hidden="true" className="text-primary" />
@@ -461,33 +458,6 @@ export default function HomePage() {
                     Lima, Perú
                   </li>
                 </ul>
-              </div>
-
-              <div id="contacto">
-                <h3 className="font-bold text-gray-900 mb-4">Síguenos</h3>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    aria-label="Facebook de Market Exchange"
-                    className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    <FaFacebookF size={14} aria-hidden="true" />
-                  </button>
-                  <a
-                    href="https://www.instagram.com/yeru_peru/"
-                    aria-label="Instagram de Market Exchange"
-                    className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    <FaInstagram size={16} aria-hidden="true" />
-                  </a>
-                  <button
-                    type="button"
-                    aria-label="WhatsApp de Market Exchange"
-                    className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    <FaWhatsapp size={16} aria-hidden="true" />
-                  </button>
-                </div>
               </div>
             </div>
 
